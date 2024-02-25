@@ -377,5 +377,129 @@ export class FileSystemDatasource implements LogDataSource{
     }
 }
 ~~~
+-----
+
+## LogRepository Implementation
+
+- Nuestra clase abstracta LogRepository debe tener los métodos saveLog y getLogs
+- Se llaman igual que los de nuestro Datasource porque el repositorio va a llamar al DataSource
+- Creo la carpeta infraestructure/**repository** con LogRepository.ts
+- Implementa la clase abstracta LogRepository. **Con Ctrl + . autocompleta los métodos** 
+- Inyecto el Datasource en el constructor de la forma abreviada con **private readonly**
+- Lo uso para llamar a los métodos y le paso el log a saveLog y el severityLevel a getLogs
+
+~~~js
+import { LogDataSource } from "../../domain/datasources/log.datasource";
+import { LogEntity, LogSeverityLevel } from "../../domain/entities/log.entity";
+import { LogRepository } from "../../domain/repository/log.repository";
+
+export class LogRepositoryImpl implements LogRepository{
+
+    constructor(
+        private readonly logDataSource: LogDataSource
+    ){}
+
+    async saveLog(log: LogEntity): Promise<void> {
+        return await this.logDataSource.saveLog(log)
+    }
+    async getLogs(severityLevel: LogSeverityLevel): Promise<LogEntity[]> {
+        return await this.logDataSource.getLogs(severityLevel)
+    }
+
+}
+~~~
+------
+
+## Inyectar repositorio en caso de uso
+
+- Voy al CheckService. Inyecto el repositorio
+- Si todo sale bien puedo guardar con logRepository.saveLog
+- Necesito guardar una nueva instancia de LogEntity
+
+~~~js
+import { LogEntity, LogSeverityLevel } from "../../entities/log.entity"
+import { LogRepository } from "../../repository/log.repository"
+
+interface CheckServiceUseCase{
+    execute(url: string):Promise <boolean>
+}
+
+type SuccessCallback = ()=> void  //tipo de lo que quiero ejecutar si todo sale bien
+type ErrorCallback = (error: string)=> void //tipo si hay algún error
+
+export class CheckService implements CheckServiceUseCase{
+
+    constructor(
+        private readonly logRepository: LogRepository,
+        private readonly successCallback: SuccessCallback,
+        private readonly errorCallback: ErrorCallback
+        ){}
+    
+    
+    async execute(url: string): Promise <boolean>{
+
+        try {
+            const req = await fetch(url) 
+            
+            if(!req.ok){
+                throw new Error(`Error on check service ${url}`)
+            }   
+            
+            //Si ha ido bien puedo guardar el log con LogRepository
+
+            const log = new LogEntity(`Service ${url} working`, LogSeverityLevel.low )
+            this.logRepository.saveLog(log)
+            this.successCallback() //llamo al SuccessCallback si todo sale bien
+            
+            
+            return true
+            
+        } catch (error) {
+            
+            const errorMessage = `${error}`
+            const log = new LogEntity(errorMessage, LogSeverityLevel.low )
+            
+            this.logRepository.saveLog(log)
+            this.errorCallback(errorMessage) //llamo al ErrorCallback
+            
+            return false
+        }
+
+    }
+}
+~~~
+------
+
+- Falta la inyección de la dependencia en server.ts en la nueva instancia de CheckService
+- En el server necesito crear la nueva instancia que van a usar todos los servicios
+- Creo una nueva instancia de LogRepositoryImpl fuera del server y le paso el fileSystemDataSource
+- Se lo paso a la nueva instancia de CheckService
+
+~~~js
+import { CheckService } from "../domain/use-cases/checks/check-service";
+import { FileSystemDatasource } from "../infraestructure/datasources/file-system.datasource";
+import { LogRepositoryImpl } from "../infraestructure/repository/log.repository";
+import { CronService } from "./cron/cron-service";
+
+
+const fileSystemRepository = new LogRepositoryImpl(
+    new FileSystemDatasource()
+)
+
+
+export class Server {
+
+    public static start(){
+        CronService.createJob('*/5 * * * * *', ()=>{
+            
+            new CheckService(
+                fileSystemRepository,
+                ()=> console.log("Success!"),
+                (error)=> console.log(`${error}`)
+            ).execute('https://google.es')
+        })
+    }
+}
+~~~
 
 - 

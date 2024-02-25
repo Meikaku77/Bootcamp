@@ -7,6 +7,7 @@ export enum LogSeverityLevel{
 
 export class LogEntity{
     
+   
     public level: LogSeverityLevel 
     public message: string
     public createdAt: Date
