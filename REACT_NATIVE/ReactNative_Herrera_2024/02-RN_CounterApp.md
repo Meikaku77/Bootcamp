@@ -318,5 +318,277 @@ const styles = StyleSheet.create({
 export * from './PrimaryButton'
 ~~~
 
-- S
+- Creo la interfaz para las props, hago el longPress opcional
+- Coloco las props donde corresponden
+- Copio los estilos que había definido y se los coloco al componente
+
+~~~js
+import React from 'react'
+import { GestureResponderEvent, Platform, Pressable, StyleSheet, Text, View } from 'react-native'
+
+interface Props{
+  label: string
+  onPress: (event: GestureResponderEvent)=> void
+  onLongPress?: (event: GestureResponderEvent)=> void
+}
+
+export const PrimaryButton = ({label, onPress, onLongPress}: Props) => {
+  return (
+    <View>
+        <Pressable style={({pressed})=>[
+          styles.button,
+          pressed && styles.buttonPressed
+        ]} onPress={onPress} onLongPress={onLongPress} >
+          <Text style={styles.buttonText} >{label}</Text>
+        </Pressable>
+    </View>
+  )
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    justifyContent: 'center'
+  },
+  button:{
+    backgroundColor: 'purple',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 10,
+    marginVertical: 10
+  },
+  buttonText:{
+    fontSize: 25,
+    color: 'white'
+  },
+  buttonPressed:{
+    backgroundColor: Platform.OS === 'android' ?'rgb(126, 0, 78)': 'white'
+  }
+
+})
+~~~
+----
+
+- Añado el componente a CounterScreen
+
+~~~js
+export const CounterScreen = () => {
+
+  const [counter, setCounter] = useState(10)
+
+
+  const increment = ()=> {
+    setCounter(counter +1)
+  }
+
+  const decrement = ()=> {
+    setCounter(counter -1)
+  }
+
+  return (
+    <View style={styles.container}>
+        <Text style={styles.title}>Counter: {counter}</Text>
+      <PrimaryButton label="increment" onPress={increment} onLongPress={()=>setCounter(0)} />
+      <PrimaryButton label="decrement" onPress={decrement} />
+    </View>
+  )
+}
+~~~
+-----
+
+## React Native Paper - Instalación
+
+- Instalamos
+
+> npm i react-native-paper
+> npm i react-native-safe-area-context
+
+- Hay que usar el PaperProvider como provider en el punto más alto de la aplicación que va a contener los componentes
+
+~~~js
+import React from 'react';
+import { CounterScreen } from './src/presentation/screens/CounterScreen';
+import {PaperProvider} from 'react-native-paper'
+
+export const App=(): React.JSX.Element=>{
+
+  return(
+      <PaperProvider>
+         <CounterScreen />
+      </PaperProvider>
+   )
+}
+~~~
+
+- Si tienes un gestor de estado tipo Redux-toolkit, colocar el PaperProvider dentro del gestor de estado y dentro del PaperProvider el App
+- React Native Paper se puede **customizar**
+- Puedo mirar la documentación para evr cómo usar un Button de React Native Paper
+- Uso el mode contained 
+- Los componentes de React Native Paper siguen los standares de React Native
+
+~~~js
+import React, { useState } from 'react'
+import { StyleSheet, Text, View} from 'react-native'
+import { PrimaryButton } from '../../components/shared'
+import {Button} from 'react-native-paper'
+
+export const CounterScreen = () => {
+
+  const [counter, setCounter] = useState(10)
+
+
+  const increment = ()=> {
+    setCounter(counter +1)
+  }
+
+  const decrement = ()=> {
+    setCounter(counter -1)
+  }
+
+  return (
+    <View style={styles.container}>
+        <Text style={styles.title}>Counter: {counter}</Text>
+      <PrimaryButton label="increment" onPress={increment} onLongPress={()=>setCounter(0)} />
+      <Button onPress={decrement} mode='contained'>Decrementar</Button>
+    </View>
+  )
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex:1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  title:{
+    fontSize: 45,
+    color:'black',
+    fontWeight: '300'
+  }
+})
+~~~
+----
+
+## Floating Action Button FAB
+
+- Para crear estilos de manera global, creo una carpeta en presentation/**theme**
+
+~~~js
+import { StyleSheet } from "react-native"
+
+export const Globalstyles = StyleSheet.create({
+    centerContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center'
+    },
+    title: {
+        fontSize: 45,
+        fontWeight: '300',
+        color: 'black'
+    }
+})
+~~~
+
+- Ahora solo debo importarlo y usar GlobalStyles.centerContainer
+- Para crear un FAB creo un nuevo componente en /**shared**, lo exporto en el archivo de barril
+- Mirar la documentación de **React Native Paper**!!
+
+~~~js
+import React from 'react'
+import { StyleSheet } from 'react-native'
+import {FAB} from 'react-native-paper'
+
+export const FloatingAB = () => {
+  return (
+    <FAB 
+    style={styles.fab} 
+    onPress={()=>console.log("FAB!")}
+    label="FAB"
+    />
+  )
+}
+
+const styles = StyleSheet.create({
+  fab: {
+    position: 'absolute',
+    margin: 16,
+    right: 0,
+    bottom: Platform.OS === 'android'? 15: 0
+  }
+})
+~~~
+
+- Puedo también usar GlobalStyles para los estilos del fab
+-------
+
+## Configurar iconos
+
+> npm i react-native-vector-icons
+> npm i -D @types/react-native-vector-icons
+
+- En *android/app/build.gradle* añadir
+
+~~~js
+project.ext.vectoricons =[
+  iconFontNames: ['Ionicons.ttf']
+]
+
+apply from: file ("../../node_modules/react-native-vector-icons/fonts.gradle")
+~~~
+
+- Ahora ya puedo usar iconos. Importo Icon de 'react-native-vector-icons/Ionicons'
+
+~~~js
+<Icon name="accessibility-outline" size={35} />
+~~~
+
+- Icon tiene un montón de propiedades
+- En el FAB puedo colocar el icon de varias maneras, incluso puedo mandar un funtional Component
+- Pero quiero hacerlo de otra forma
+- Hay que configurar Paper
+-------
+
+## Configurar Iconos Globles
+
+- En **PaperProvider** uso la propiedad **settings**
+
+~~~js
+import React from 'react';
+import { CounterScreen } from './src/presentation/screens/CounterScreen';
+import {PaperProvider} from 'react-native-paper'
+import IonIcon from 'react-native-vector-icons/Ionicons'
+
+export const App=(): React.JSX.Element=>{
+
+  return(
+      <PaperProvider
+      settings={({
+         icon: (props)=> <IonIcon {...props} />
+      })}
+      >
+         <CounterScreen />
+      </PaperProvider>
+   )
+}
+~~~
+
+- Ahora solo tengo que añadir el icono que quiero a la propiedad icon. Ya no necesita el label
+
+~~~js
+export const FloatingAB = () => {
+  return (
+    <FAB 
+    style={styles.fab} 
+    onPress={()=>console.log("FAB!")}
+    icon='add'
+    />
+  )
+}
+~~~
+------
+
+
+
+
 

@@ -1,12 +1,18 @@
 import React from 'react';
-import { SafeAreaView} from 'react-native';
 import { CounterScreen } from './src/presentation/screens/CounterScreen';
-
+import {PaperProvider} from 'react-native-paper'
+import IonIcon from 'react-native-vector-icons/Ionicons'
 
 export const App=(): React.JSX.Element=>{
 
   return(
-      <CounterScreen />
+      <PaperProvider
+      settings={({
+         icon: (props)=> <IonIcon {...props} />
+      })}
+      >
+         <CounterScreen />
+      </PaperProvider>
    )
 }
 

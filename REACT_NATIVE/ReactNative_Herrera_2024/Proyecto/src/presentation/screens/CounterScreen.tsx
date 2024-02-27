@@ -1,5 +1,10 @@
 import React, { useState } from 'react'
-import { Button, Platform, Pressable, StyleSheet, Text, View} from 'react-native'
+import { StyleSheet, Text, View} from 'react-native'
+import { PrimaryButton } from '../../components/shared'
+import {Button} from 'react-native-paper'
+import { GlobalStyles } from '../theme/globalStyles'
+import { FloatingAB } from '../../components/shared/FloatingAB'
+import Icon from 'react-native-vector-icons/Ionicons'
 
 export const CounterScreen = () => {
 
@@ -15,23 +20,12 @@ export const CounterScreen = () => {
   }
 
   return (
-    <View style={styles.container}>
-        <Text style={styles.title}>Counter: {counter}</Text>
-
-        <Pressable 
-        style={({pressed})=>[
-            styles.button,
-            pressed && styles.buttonPressed]} 
-            onPress={increment}>
-             <Text style={styles.buttonText}>Increment</Text>
-        </Pressable>
-        <Pressable 
-        style={({pressed})=>[
-            styles.button,
-            pressed && styles.buttonPressed]} 
-            onPress={decrement} onLongPress={()=>setCounter(0)}>
-          <Text style={styles.buttonText}>Decrement</Text>
-        </Pressable>
+    <View style={GlobalStyles.centerContainer}>
+        <Text style={GlobalStyles.title}>Counter: {counter}</Text>
+        <Icon name="accessibility-outline" size={35} />
+      <PrimaryButton label="increment" onPress={increment} onLongPress={()=>setCounter(0)} />
+      <Button onPress={decrement} mode='contained'>Decrementar</Button>
+      <FloatingAB />
     </View>
   )
 }
@@ -48,20 +42,6 @@ const styles = StyleSheet.create({
     fontSize: 45,
     color:'black',
     fontWeight: '300'
-  },
-  button:{
-    backgroundColor: 'purple',
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 10,
-    marginVertical: 10
-  },
-  buttonText:{
-    fontSize: 25,
-    color: 'white'
-  },
-  buttonPressed:{
-    backgroundColor: Platform.OS === 'android' ?'rgb(126, 0, 78)': 'white'
   }
 })
 
