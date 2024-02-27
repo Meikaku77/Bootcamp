@@ -501,5 +501,118 @@ export class Server {
     }
 }
 ~~~
+----
 
-- 
+## Variables de entorno
+
+- Creo el archivo .env en la raíz del proyecto
+- Lo añado a gitignore, también el directorio logs/ (no les voy a dar seguimiento desde el repositorio si no con mails)
+- En .env creo MAILER_EMAIL, con el password de mi email y el puerto de la app
+- Como .env no va a estar en el repositorio, es conveniente crear un .env.template donde dejar las variables vacías o con valores por defecto
+
+~~~
+PORT=3000
+MAILER_EMAIL=ismaelberoncastano@gmail.com
+MAILER_SECRET_KEY=mi_password_email
+PROD=true
+~~~
+
+- Debería haber un proceso que valide que lo que hay colocado en la variable de entorno es un correo válido
+- Puedo observar lo que hay en las variables de entorno (hay muchas) con un console.log a **process.env**
+    - Aqui no van a aparecer las que yo he definido si no hay configuración (y una conveniente validación)
+- Para tener disponibles las variables de entorno instalamos **dotenv**
+- Para usarlo necesito usar el patrón adaptador, pero por ahora importo **dotenv/config**
+- Ahora ya tengo disponibles las variables de entorno
+
+~~~js
+import 'dotenv/config'
+import { Server } from "./presentation/server"
+
+(async ()=>{
+    main()
+})()
+
+function main(){
+    Server.start()
+    console.log({email: process.env.MAILER_EMAIL})
+}
+~~~
+
+- El paquete **env-var** (no tiene dependencias) nos va a permitir hacer validaciones
+- Creo la carpeta src/**config**/**plugins** con el archivo envs.plugin.ts
+- Importo env y todo de env-var como env
+- Ahora puedo usar el .get, decir que el PORT es requerido, y que debe de ser un entero positivo
+
+~~~js
+import 'dotenv/config'
+import * as env from 'env-var'
+
+const PORT: number = env.get('PORT').required().asIntPositive()
+~~~
+
+- Puedo tambien exportarlo como un objeto para disponer del tipado
+
+~~~js
+import 'dotenv/config'
+import * as env from 'env-var'
+
+export const envs = {
+    PORT: env.get('PORT').required().asPortNumber()
+}
+~~~
+
+- En el server
+
+~~~js
+import { envs } from "./config/plugins/envs.plugin"
+import { Server } from "./presentation/server"
+
+(async ()=>{
+    main()
+})()
+
+function main(){
+    Server.start()
+    console.log(envs.PORT)
+}
+~~~
+
+- Hago lo mismo con el resto de variables de entorno
+
+~~~js
+import 'dotenv/config'
+import * as env from 'env-var'
+
+export const envs = {
+    PORT: env.get('PORT').required().asPortNumber(),
+    MAILER_EMAIL:env.get('MAILER_EMAIL').required().asEmailString(),
+    MAILER_SECRET_KEY: env.get('MAILER_SECRET_KEY').required().asString(),
+    PROD: env.get('PROD').required().asBool()
+}
+~~~
+
+- Podría ponerle un valor por defecto a PROD con .default(false)
+------
+
+## README.md
+
+- Con procedimientos no standards (no solo lanzar un npm run start) hay que definirlo en un README.md
+
+~~~md
+# Proyecto NOC
+
+- Aplicación de monitoreo usando Arquitectura Limpia con TypeScript
+
+# dev
+
+1. Clonar el archivo .env.template a .env
+2. Configurar las variables de entorno
+
+````
+PORT=3000
+MAILER_EMAIL=
+MAILER_SECRET_KEY=
+PROD
+
+````
+~~~

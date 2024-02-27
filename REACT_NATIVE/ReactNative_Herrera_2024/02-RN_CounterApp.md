@@ -48,7 +48,7 @@ AppRegistry.registerComponent(appName, () => App);
 ## Crear pantallas independientes
 
 - En lugar del View uso el SafeAreaView para que se renderice correctamente con el notch de ios
-- En src/**presentation** creo el HelloWorldScreen.tsx y lo renderizo en App.tsx
+- En src/**presentation**/**screens** creo el HelloWorldScreen.tsx y lo renderizo en App.tsx
 
 ~~~js
 import React from 'react';
@@ -81,7 +81,242 @@ const styles = StyleSheet.create({
   }
 })
 ~~~
+
+- Para agregar estilos solo tengo que usar la propiedad style y añadir con notación de punto los estilos
+- Si el flex: 1 no funciona, mirar que el componente padre (como es en este caso el SafeAreaView en App no lo esté restringiendo)
+
+~~~js
+import React from 'react'
+import { StyleSheet, Text, View } from 'react-native'
+
+const HelloWorldScreen = () => {
+  return (
+    <View style={styles.container} >
+        <Text style={styles.title}>Hello World</Text>
+    </View>
+  )
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center'
+  }, 
+
+  title:{
+    fontSize: 45,
+    textAlign: 'center',
+    color: 'black'
+  }
+})
+
+export default HelloWorldScreen
+~~~
 --------
 
+## Propiedades
 
+- Para usar propiedades en los componentes en Typescript hay que usar una interfaz
+- Puedo hacer la propiedad opcional con ?
+- La desestructuro y añado el tipado de la interfaz
+- Puedo ponerle un valor por defecto
+
+~~~js
+interface Props{
+  name?: string
+}
+
+const HelloWorldScreen = ({name= "World"}: Props) => {
+  return (
+    <View style={styles.container} >
+        <Text style={styles.title}>Hello {name}</Text>
+    </View>
+  )
+}
+~~~
+
+- Ahora puedo pasarle la propiedad name al componente
+
+~~~js
+export const App= (): React.JSX.Element=> {
+
+  return(
+    <SafeAreaView>
+      <HelloWorldScreen name='Ismael Berón' />
+    </SafeAreaView>
+   )
+}
+~~~
+
+- Los componentes nativos tienen sus propias propiedades
+- Por ejemplo, Text tiene **numberOfLines** que son el número de lineas que quiero y si no cabe corta el texto con una elipsis (...)
+  - Puedo controlar esta elipsis con **ellipsizeMode**, 
+  - **tail** es por defecto, quita el texto al final, **middle** hace el corte en medio, **head** lo quita del principio, **clip**lo acomoda como puede 
+----
+
+## Crear un contador
+
+- Creo el componente CounterScreen en **src/presentation/screens** con un View y un Text
+  - Usar el snippet personalizado **rncc** hecho con *Easy Snippets*
+
+~~~js
+// @prefix rncc
+// @description 
+/* eslint-disable */
+
+
+import React from 'react'
+import { Text, View } from 'react-native'
+
+export const CounterScreen = () => {
+  return (
+    <View>
+        <Text></Text>
+    </View>
+  )
+}
+~~~
+
+- Añado unos estilos y coloco unos botones. Usaremos Button para este caso pero no es el que usaremos normalmente
+- Contador
+
+~~~js
+export const CounterScreen = () => {
+
+  const [counter, setCounter] = useState(10)
+
+
+  const increment = ()=> {
+    setCounter(counter +1)
+  }
+
+  const decrement = ()=> {
+    setCounter(counter -1)
+  }
+
+  return (
+    <View style={styles.container}>
+        <Text style={styles.title}>Counter: {counter} </Text>
+
+        <Button title="increment" onPress={()=>increment()}/>
+        <Button title="decrement" onPress={()=> decrement()}/>
+    </View>
+  )
+}
+~~~
+
+- Puedo usar el Pressable que es más personalizable.
+- Aparecen sin estilos. Creo button en styles, y buttonText para el texto del botón
+- Puedo usar la prop onLongPress para resetear el contador usando el setCounter
+
+~~~js
+import React, { useState } from 'react'
+import { Button, Pressable, StyleSheet, Text, View} from 'react-native'
+
+export const CounterScreen = () => {
+
+  const [counter, setCounter] = useState(10)
+
+
+  const increment = ()=> {
+    setCounter(counter +1)
+  }
+
+  const decrement = ()=> {
+    setCounter(counter -1)
+  }
+
+  return (
+    <View style={styles.container}>
+        <Text style={styles.title}>Counter: {counter}</Text>
+
+        <Pressable style={styles.button} onPress={increment}>
+          <Text style={styles.buttonText}>Increment</Text>
+        </Pressable>
+        
+        <Pressable style={styles.button} onPress={decrement} onLongPress={()=>setCounter(0)}>
+          <Text style={styles.buttonText}>Decrement</Text>
+        </Pressable>
+    </View>
+  )
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex:1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  title:{
+    fontSize: 45,
+    color:'black',
+    fontWeight: '300'
+  },
+  button:{
+    backgroundColor: 'purple',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 10,
+    marginVertical: 10
+  },
+  buttonText:{
+    fontSize: 25,
+    color: 'white'
+  }
+})
+~~~
+
+- Para que aparezca el color picker habilitar Editor:color decorators en VSCode
+- Puedo usar en el style de Pressable un callback del que puedo desestructurar **pressed**, devuelve un arreglo.
+- Le paso los estilos del botón y puedo usar pressed (boolean por defecto en true) para aplicar estilos condicionalmente cuando se apriete el botón
+
+~~~js
+  return (
+    <View style={styles.container}>
+        <Text style={styles.title}>Counter: {counter}</Text>
+
+        <Pressable 
+        style={({pressed})=>[
+            styles.button,
+            pressed && styles.buttonPressed]} 
+            onPress={increment}>
+             <Text style={styles.buttonText}>Increment</Text>
+        </Pressable>
+        <Pressable 
+        style={({pressed})=>[
+            styles.button,
+            pressed && styles.buttonPressed]} 
+            onPress={decrement} onLongPress={()=>setCounter(0)}>
+          <Text style={styles.buttonText}>Decrement</Text>
+        </Pressable>
+    </View>
+  )
+~~~
+
+- Es más práctico crear un componente para tener personalizado el botón, que sea customizable
+- Para renderizar estilos condicionalmente si estamos en android o ios uso **Platform** de 'react-native'
+- Ejemplo:
+
+~~~js
+ buttonPressed:{
+    backgroundColor: Platform.OS === 'android'? 'rgb(126, 0, 78)': 'white'
+  }
+~~~
+
+- De esta manera tengo el estilo aplicado de manera independiente por plataforma
+------
+
+## Componente Personalizad
+
+- Conviene tener una biblioteca de componentes personalizados (y personalizables) para no estar reinventando la rueda
+- Creemos este botón en /components/**shared** con un archivo de barril **index.ts**
+- Dentro de share creo PrimaryButton.tsx con el snippet **rafc** o el snippet personalizado **rncc**
+- Lo coloco en el archivo de barril
+
+~~~js
+export * from './PrimaryButton'
+~~~
+
+- S
 

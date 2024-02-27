@@ -1,16 +1,15 @@
 import React from 'react';
-import { SafeAreaView, Text} from 'react-native';
-import HelloWorldScreen from './src/presentation/HelloWorldScreen';
+import { SafeAreaView} from 'react-native';
+import { CounterScreen } from './src/presentation/screens/CounterScreen';
 
 
-export const App= (): React.JSX.Element=> {
+export const App=(): React.JSX.Element=>{
 
   return(
-    <SafeAreaView>
-      <HelloWorldScreen />
-    </SafeAreaView>
+      <CounterScreen />
    )
 }
+
 
 
 
