@@ -25,6 +25,8 @@
 
 > npm i @react-navigation/native
 > npm install react-native-gesture-handler
+> npm i react-native-screens  react-native-safe-area-context
+> npm i @react-native-community/masked-view
 
 - Usa import 'react-native-gesture-handler' en App.tsx **encima de todos los import**
 - Lanza la app para ver si hay algún error
@@ -75,20 +77,433 @@ AppRegistry.registerComponent(appName, () => App);
 ~~~js
 import { createStackNavigator } from '@react-navigation/stack';
 import { HomeScreen } from '../screens/home/HomeScreen';
-import { ProductScreen } from '../screens/products/ProductScreen';
 import { ProductsScreen } from '../screens/products/ProductsScreen';
+import { SettingsScreen } from '../screens/settings/SettingsScreen';
 
 const Stack = createStackNavigator();
 
-function MyStack() {
+export const StackNavigator =()=> {
   return (
     <Stack.Navigator>
       <Stack.Screen name="Home" component={HomeScreen} />
-      <Stack.Screen name="Product" component={ProductScreen} />
       <Stack.Screen name="Products" component={ProductsScreen} />
+      <Stack.Screen name="Settings" component={SettingsScreen} />
     </Stack.Navigator>
   );
 }
 ~~~
 
-- 
+- Coloco el stackNavigator en App dentro de NavigationContainer
+
+~~~js
+import 'react-native-gesture-handler';
+import React from 'react';
+import { StackNavigator } from './src/presentation/routes/StackNavigator';
+import { NavigationContainer } from '@react-navigation/native';
+
+
+export const App=(): React.JSX.Element=> {
+
+  return (
+    <NavigationContainer>
+        <StackNavigator />
+    </NavigationContainer>
+  );
+}
+~~~
+-----
+
+## Navegar a otras pantallas
+
+- Si hago un console.log de las props de HomeScreen hay muchas debido a que estoy dentro del NavigationContainer
+
+~~~js
+import React from 'react'
+import { Text, View } from 'react-native'
+
+export const HomeScreen = (props: any) => {
+  console.log(props)
+  
+  return (
+    <View>
+        <Text>HomeScreen</Text>
+    </View>
+  )
+}
+~~~
+
+- Tengo el **navigation**, **navigate**, el **pop** para cerrar la pantalla actual y regresar a la otra
+- Tipar estas props puede ser un poco retador. Tenemos **hooks** que nos permiten **acceder a esa info**
+- Creo un botón que me llevará a productos
+- Le añado unos estilos desde los estilos globales
+
+~~~js
+import {StyleSheet} from 'react-native'
+
+export const globalStyles = StyleSheet.create({
+  container:{
+    flex:1,
+    padding: 20,
+    justifyContent: 'center'
+  },
+
+  primaryButton:{
+    backgroundColor: 'orange',
+    borderRadius: 5,
+    padding: 10,
+    width: '100%',
+    alignItems: 'center'
+  },
+
+  buttonText:{
+    color: 'black',
+    fontSize: 18
+  }
+})
+~~~
+
+- Luego crearemos este botón personalizado
+- Hagamos la navegación. Sale más fácil hacerlo con el hook **useNavigation**
+- Tipo **as never** el componente al que navego, luego lo arreglaremos 
+
+~~~js
+import React from 'react'
+import { Pressable, Text, View } from 'react-native'
+import { globalStyles } from '../../theme/theme'
+import { useNavigation } from '@react-navigation/native'
+
+export const HomeScreen = () => {
+  
+  const navigation = useNavigation()
+  
+  return (
+    <View style={globalStyles.container} >
+        <Pressable 
+        onPress={()=> navigation.navigate("Products" as never)}
+        style={globalStyles.primaryButton} >
+            <Text style={globalStyles.buttonText} >Productos</Text>
+        </Pressable>
+    </View>
+  )
+}
+~~~
+
+- Podemos personalizar el Home que se ve arriba de la pantalla, más adelante
+- Creo el componente del botón personalizado
+- Dentro de components creo la carpeta /**shared** y dentro PrimaryButton.tsx
+
+~~~js
+import React from 'react'
+import { Pressable, Text, View } from 'react-native'
+import { globalStyles } from '../../theme/theme'
+
+
+interface Props{
+    onPress: ()=> void
+    label: string
+}
+
+export const PrimaryButton  = ({label, onPress}: Props) => {
+
+
+  return (
+    <Pressable 
+    onPress={onPress}
+    style={globalStyles.primaryButton} >
+        <Text style={globalStyles.buttonText}>{label}</Text>
+    </Pressable>
+  )
+}
+~~~
+
+- En HomeScreen añado el componente y creo otro para Settings
+
+~~~js
+import React from 'react'
+import { Pressable, Text, View } from 'react-native'
+import { globalStyles } from '../../theme/theme'
+import { useNavigation } from '@react-navigation/native'
+import { PrimaryButton } from '../../components/shared/PrimaryButton'
+
+export const HomeScreen = () => {
+  
+  const navigation = useNavigation()
+  
+  return (
+    <View style={globalStyles.container} >
+      <PrimaryButton label={"Products"} onPress={()=> navigation.navigate("Products" as never)} />
+      <PrimaryButton label={"Settings"} onPress={()=> navigation.navigate("Settings" as never)} />
+    </View>
+  )
+}
+~~~
+------
+
+## Estilizando Stack Navigator
+
+- Configuraciones que podemos hacer al Stack Navigator
+- Con screenOptions tienes un montón de propiedades
+
+~~~js
+import { createStackNavigator } from '@react-navigation/stack';
+import { HomeScreen } from '../screens/home/HomeScreen';
+import { ProductsScreen } from '../screens/products/ProductsScreen';
+import { ProductScreen } from '../screens/products/ProductScreen';
+import { SettingsScreen } from '../screens/settings/SettingsScreen';
+
+const Stack = createStackNavigator();
+
+export const StackNavigator=()=> {
+  return (
+    <Stack.Navigator screenOptions={{
+      headerShown: true,  //false no muestra el header
+      headerStyle:{
+        elevation: 0, //0 elimina la linea divisoria del header
+        shadowColor: 'transparent', //hace que desaparezca en ios
+        
+      }
+    }}>
+      <Stack.Screen name="Home" component={HomeScreen} />
+      <Stack.Screen name="Products" component={ProductsScreen} />
+      <Stack.Screen name="Product" component={ProductScreen} />
+      <Stack.Screen name="Settings" component={SettingsScreen} />
+    </Stack.Navigator>
+  );
+}
+~~~
+
+- Stack.Screen también tiene la propiedad **options**
+-----
+
+## FlatList - Pantalla de productos
+
+- En data le añado el arreglo, en renderItem puedo desestructurar el item para acceder al objeto
+- Si extraigo la data (en lugar de desestructurar item) puedo acceder a los separators (mirar documentación)
+- Puedo renderizar en cada botón el name del arreglo
+- Notar que el callback de renderItem está entre paréntesis y no llaves para hacer **implícito el return**
+- Coloco un texto Ajustes en el bottom y otro botón
+
+~~~js
+import React from 'react'
+import { Text, View } from 'react-native'
+import { FlatList } from 'react-native-gesture-handler'
+import { globalStyles } from '../../theme/theme'
+import { PrimaryButton } from '../../components/shared/PrimaryButton'
+import { useNavigation } from '@react-navigation/native'
+
+const products=[
+  {id:1, name: "Spaceship"},
+  {id:2, name: "Car"},
+  {id:3, name: "Plane"},
+  {id:4, name: "MotorCycle"},
+  {id:5, name: "Bike"},
+]
+
+export const ProductsScreen = () => {
+
+  const navigation = useNavigation()
+  return (
+    <View style={globalStyles.container}>
+      <Text>Productos</Text>
+        <FlatList  
+        data={products}
+        renderItem={({item})=>(
+        <PrimaryButton
+          label={item.name}
+          onPress={()=>{navigation.navigate("Product" as never) } } />)} 
+        />
+
+        <Text style={{marginBottom: 10, fontSize:30}}>Ajustes</Text>
+        <PrimaryButton label={"Ajustes"} onPress={()=>navigation.navigate("Settings" as never)} />
+    </View>
+  )
+}
+~~~
+----
+
+## Enviar argumentos entre pantallas
+
+- Con el **navigation.navigate**, los argumentos que siguen al componente son los que le va a mandar a esa pantalla
+- Los argumentos hay que tiparlos previamente
+
+~~~js
+onPress= {()=> {navigation.navigate("Product" as never, {id: item.id ,name: item.name})}}
+~~~
+
+- Para evitar el **as never** en el tipado me creo un tipo **RootStackParams** en el Navigator
+- Le paso el RootStackParams al **createStackNavigator**
+
+~~~js
+import { createStackNavigator } from '@react-navigation/stack';
+import { HomeScreen } from '../screens/home/HomeScreen';
+import { ProductsScreen } from '../screens/products/ProductsScreen';
+import { SettingsScreen } from '../screens/settings/SettingsScreen';
+import { ProductScreen } from '../screens/products/ProductScreen';
+
+
+export type RootstackParams ={
+  Home: undefined,
+  Product: {id: number, name: string},
+  Products: undefined,
+  Settings:undefined,
+}
+const Stack = createStackNavigator<RootstackParams>();
+
+export const StackNavigator=()=> {
+  return (
+    <Stack.Navigator screenOptions={{
+      headerShown: true,  //false no muestra el header
+      headerStyle:{
+        elevation: 0, //0 elimina la linea divisoria del header
+        shadowColor: 'transparent', //hace que desaparezca en ios
+
+      }
+    }}>
+      <Stack.Screen name="Home" component={HomeScreen} />
+      <Stack.Screen name="Products" component={ProductsScreen} />
+      <Stack.Screen name="Product" component={ProductScreen} />
+      <Stack.Screen name="Settings" component={SettingsScreen} />
+    </Stack.Navigator>
+  );
+}
+~~~
+
+- En ProductsScreen tengo que decirle al useNavigation **cuáles son las properties disponibles**
+- Para eso **le paso el genérico NavigationProp y a este el RootStackParams**
+- Puedo **quitar el as never**
+- Le puedo poner type en la importación cuando es un tipo, ayuda a la transpilación ya que no se convierte en código real
+
+~~~js
+import React from 'react'
+import { Text, View } from 'react-native'
+import { FlatList } from 'react-native-gesture-handler'
+import { globalStyles } from '../../theme/theme'
+import { PrimaryButton } from '../../components/shared/PrimaryButton'
+import { NavigationProp, useNavigation } from '@react-navigation/native'
+import { type RootstackParams } from '../../routes/StackNavigator'
+
+const products=[
+  {id:1, name: "Spaceship"},
+  {id:2, name: "Car"},
+  {id:3, name: "Plane"},
+  {id:4, name: "MotorCycle"},
+  {id:5, name: "Bike"},
+]
+
+export const ProductsScreen = () => {
+
+  const navigation = useNavigation<NavigationProp<RootstackParams>>() //aqui!
+
+  return (
+    <View style={globalStyles.container}>
+      <Text>Productos</Text>
+        <FlatList  
+        data={products}
+        renderItem={({item})=>(
+        <PrimaryButton
+          label={item.name}
+          onPress={()=>{navigation.navigate("Product", {id: item.id, name: item.name}) } } />)} 
+        />
+
+        <Text style={{marginBottom: 10, fontSize:30}}>Ajustes</Text>
+        <PrimaryButton label={"Ajustes"} onPress={()=>navigation.navigate("Settings")} />
+    </View>
+  )
+}
+~~~
+
+- También podemos quitar el as never en Home haciendo el mismo proceso
+
+~~~js
+import React from 'react'
+import { Pressable, Text, View } from 'react-native'
+import { globalStyles } from '../../theme/theme'
+import { type NavigationProp, useNavigation } from '@react-navigation/native'
+import { PrimaryButton } from '../../components/shared/PrimaryButton'
+import type {RootstackParams } from '../../routes/StackNavigator'
+
+export const HomeScreen = () => {
+  
+  const navigation = useNavigation<NavigationProp<RootstackParams>>()
+  
+  return (
+    <View style={globalStyles.container} >
+      <PrimaryButton label={"Products"} onPress={()=> navigation.navigate("Products")} />
+      <PrimaryButton label={"Settings"} onPress={()=> navigation.navigate("Settings")} />
+    </View>
+  )
+}
+~~~
+
+- **Cómo obtenemos los argumentos que pasamos entre pantallas?**
+- Vienen en las **props.params**, pero puede ser que estés en una situación en la cual no puedas extraerlo de las props
+- Para ello usaremos **useRoute**
+- Para tiparlo uso como genérico el RouteProp, y dentro cómo genérico le paso el RootstackParams, del componente Product
+- Sin el tipado quedaría useRoute().params
+- Con el tipado ya puedo desestructurar el id y el name y pasarselo al Text
+- Para colocar el nombre del producto en el header usaré un **useEffect**
+- Accedo al header a través del **useNavigation** con el método **setOptions y la propiedad title**
+
+~~~js
+import { type RouteProp, useRoute, useNavigation } from '@react-navigation/native'
+import React, { useEffect } from 'react'
+import { Text, View } from 'react-native'
+import { type RootstackParams } from '../../routes/StackNavigator'
+import { globalStyles } from '../../theme/theme'
+
+export const ProductScreen = () => {
+
+  const {id, name} = useRoute<RouteProp<RootstackParams, 'Product'>>().params //los argumentos estan en .params
+  const navigation = useNavigation()
+
+  useEffect(()=>{
+    navigation.setOptions({
+      title: name
+    })
+  },[])
+
+  return (
+    <View style={globalStyles.container} >
+        <Text style={{fontSize: 20, textAlign: 'center', marginTop: 20}}>{id} - {name} </Text>
+    </View>
+  )
+}
+~~~
+-----
+
+## Stack PopToPop
+
+- Para volver al Home ya no tenemos el popToTop directamente del navigator. Tenemos que usar el dispatch
+- Tenemos ciertas acciones específicas que estan en el StackActions. Así nos ahorramos tipar el useNavigation
+- También puedo usar el .goBack() para volver atrás
+
+~~~js
+import React from 'react'
+import { Text, View } from 'react-native'
+import { globalStyles } from '../../theme/theme'
+import { PrimaryButton } from '../../components/shared/PrimaryButton'
+import { StackActions, useNavigation } from '@react-navigation/native'
+
+export const SettingsScreen = () => {
+
+  const navigator = useNavigation()
+
+  return (
+    <View style={globalStyles.container} >
+        <Text style={{marginBottom: 10}} >SettingsScreen</Text>
+
+        <PrimaryButton 
+        label="Regresar"
+        onPress={()=>navigator.goBack()} />
+        
+        <PrimaryButton 
+        label="Regresar"
+        onPress={()=>navigator.dispatch(StackActions.popToTop())} />
+    </View>
+  )
+}
+~~~
+------
+
+## Drawer
+
