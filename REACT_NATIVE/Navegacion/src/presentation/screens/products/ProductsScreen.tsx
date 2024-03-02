@@ -20,7 +20,7 @@ export const ProductsScreen = () => {
 
   return (
     <View style={globalStyles.container}>
-      <Text>Productos</Text>
+      <Text style={{textAlign: 'center', fontSize: 30, marginBottom: 10}}>Productos</Text>
         <FlatList  
         data={products}
         renderItem={({item})=>(
@@ -29,7 +29,7 @@ export const ProductsScreen = () => {
           onPress={()=>{navigation.navigate("Product", {id: item.id, name: item.name}) } } />)} 
         />
 
-        <Text style={{marginBottom: 10, fontSize:30}}>Ajustes</Text>
+        <Text style={{marginBottom: 10, fontSize:30, textAlign: 'center'}}>Ajustes</Text>
         <PrimaryButton label={"Ajustes"} onPress={()=>navigation.navigate("Settings")} />
     </View>
   )

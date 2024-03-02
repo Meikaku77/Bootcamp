@@ -17,7 +17,7 @@ export const SettingsScreen = () => {
         onPress={()=>navigator.goBack()} />
         
         <PrimaryButton 
-        label="Regresar"
+        label="Home"
         onPress={()=>navigator.dispatch(StackActions.popToTop())} />
     </View>
   )

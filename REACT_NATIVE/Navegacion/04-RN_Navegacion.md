@@ -505,5 +505,300 @@ export const SettingsScreen = () => {
 ~~~
 ------
 
-## Drawer
+## Drawer Navigation
 
+- Es el menu lateral
+- Se puede personalizar, pero el comportamiento que viene predefinido es el de mostrar enlaces
+- Configuración
+
+> npm i @react-navigation/drawer react-native-reanimated
+
+- Creo el componente en /routes/SideMenuNavigator
+- Coloco el StackNavigator
+
+~~~js
+import React from 'react'
+import {createDrawerNavigator} from '@react-navigation/drawer'
+import { StackNavigator } from './StackNavigator'
+import { ProfileScreen } from '../screens/profiles/ProfileScreen'
+
+const Drawer = createDrawerNavigator()
+
+const SideMenuNavigator = () => {
+  
+    return (
+    <Drawer.Navigator>
+        <Drawer.Screen name="StackNavigator" component={StackNavigator} />
+        <Drawer.Screen name="Profile" component={ProfileScreen} />
+    </Drawer.Navigator>
+  )
+}
+
+export default SideMenuNavigator
+~~~
+
+- Dentro del NavigationContainer, en lugar del StackNavigator muestor el SideMenuNavigator
+
+~~~js
+import 'react-native-gesture-handler';
+import React from 'react';
+import { NavigationContainer } from '@react-navigation/native';
+import SideMenuNavigator from './src/presentation/routes/SideMenuNavigator';
+
+
+export const App=(): React.JSX.Element=> {
+
+  return (
+    <NavigationContainer>
+        <SideMenuNavigator />
+    </NavigationContainer>
+  );
+}
+~~~
+
+- A veces da problemas el BUILD con el reanimated, prueba de mover el proyecto a un Path más corto y un nombre de carpeta mas corto
+- También puede ayudar este comando para que borre la info preprocesada
+- Para resolver el error de can´t read isConfigured of undefined ir a babel.config.js y añadir
+
+> npx react-native start --resetCache
+
+~~~js
+module.exports = {
+  presets: ['module:@react-native/babel-preset'],
+  plugins: ['react-native-reanimated/plugin']
+};
+~~~
+----
+
+## Toggle Drawer - Mostrar/Ocultar
+
+- Quiero simular el botón del Drawer debajo del Header, donde dice Home. No lo quiero en el Header
+- Voy a HomeScreen, creo un botón Menu con un useEffect y usando el **navigation.setOptions** lo coloco a la izquierda
+- Para hacer que tenga el comportamiento del Drawer uso el onPress
+- Para tiparlo en el useNavigation puede ser un poco complicado, por eso uso el **dispatch con el DrawerActions**
+- Notar que el callback de headerLeft no está entre llaves si no **entre paréntesis haciendo el return implícito**
+
+~~~js
+import React, { useEffect } from 'react'
+import { Pressable, Text, View } from 'react-native'
+import { globalStyles } from '../../theme/theme'
+import { type NavigationProp, useNavigation, DrawerActions } from '@react-navigation/native'
+import { PrimaryButton } from '../../components/shared/PrimaryButton'
+import type {RootstackParams } from '../../routes/StackNavigator'
+
+export const HomeScreen = () => {
+  
+  const navigation = useNavigation<NavigationProp<RootstackParams>>()
+
+  useEffect(() => {
+
+    navigation.setOptions({
+      headerLeft:()=>( 
+        <Pressable onPress={()=>navigation.dispatch(DrawerActions.toggleDrawer)} >
+        <Text>Menu</Text> 
+        </Pressable>
+      )
+    })
+
+  }, [])
+  
+  
+  return (
+    <View style={globalStyles.container} >
+      <PrimaryButton label={"Products"} onPress={()=> navigation.navigate("Products")} />
+      <PrimaryButton label={"Settings"} onPress={()=> navigation.navigate("Settings")} />
+    </View>
+  )
+}
+~~~
+
+- En ios, al desplegar el drawer, empuja el contenido, en Android se coloca por encima
+-----
+
+## Drawer Personalizado
+
+- En **Drawer.Navigator** tengo un montón de propiedades. Una de ellas es **screenOptions**
+- Con drawerType en slide empuja los elementos al desplegar el menú lateral
+
+~~~js
+import React from 'react'
+import {createDrawerNavigator} from '@react-navigation/drawer'
+import { StackNavigator } from './StackNavigator'
+import { ProfileScreen } from '../screens/profiles/ProfileScreen'
+
+const Drawer = createDrawerNavigator()
+
+const SideMenuNavigator = () => {
+  
+    return (
+    <Drawer.Navigator screenOptions={{
+      headerShown: false,
+      drawerType: 'slide',
+      drawerActiveBackgroundColor: 'orange',
+      drawerActiveTintColor: 'white',
+      drawerInactiveTintColor: 'black',
+      drawerItemStyle:{
+        borderRadius: 100,
+        paddingHorizontal: 20
+      }
+      }} >
+        <Drawer.Screen name="MenuItem1" component={StackNavigator} />
+        <Drawer.Screen name="Profile" component={ProfileScreen} />
+    </Drawer.Navigator>
+  )
+}
+
+export default SideMenuNavigator
+~~~
+
+- Cuando necesito un nivel más alto de personalización, puedo crear un nuevo componente y colocarlo en la prop drawerContent
+- Le paso las props DrawerContentComponentProps
+- Dentro creo un DrawerContentScrollview y le meto un View con estilos
+- A DrawerItemList le esparzo las props
+- Le paso el componente a drawerContent y esparzo las props, que en este caso es lo que hay en **screenOptions**
+
+~~~js
+import React from 'react'
+import {DrawerContentComponentProps, DrawerContentScrollView, DrawerItemList, createDrawerNavigator} from '@react-navigation/drawer'
+import { StackNavigator } from './StackNavigator'
+import { ProfileScreen } from '../screens/profiles/ProfileScreen'
+import { View, Text } from 'react-native'
+
+
+const Drawer = createDrawerNavigator()
+
+const SideMenuNavigator = () => {
+  
+    return (
+    <Drawer.Navigator 
+      drawerContent={(props)=> <CustomDrawerContent {...props} />}
+    screenOptions={{
+      headerShown: false,
+      drawerType: 'slide',
+      drawerActiveBackgroundColor: 'orange',
+      drawerActiveTintColor: 'white',
+      drawerInactiveTintColor: 'black',
+      drawerItemStyle:{
+        borderRadius: 100,
+        paddingHorizontal: 20
+      }
+      }} >
+        <Drawer.Screen name="MenuItem1" component={StackNavigator} />
+        <Drawer.Screen name="Profile" component={ProfileScreen} />
+    </Drawer.Navigator>
+  )
+}
+
+const CustomDrawerContent = (props: DrawerContentComponentProps)=>{
+  
+  return(<DrawerContentScrollView>
+    <View style={{
+      height: 200,
+      backgroundColor: '#ded1a9',
+      margin: 30,
+      borderRadius: 50
+    }}></View>
+
+    <DrawerItemList {...props} />
+  </DrawerContentScrollView>)
+}
+
+export default SideMenuNavigator
+~~~
+
+- Cuando pongo la pantalla horizontal queda mucho espacio abajo, podría mostrar el menú
+- No es para nada complicado. Utilizo **useWindowDimensions** para obtener las dimensiones de la pantalla
+- Si en lugar de 'slide' en la propiedad drawerTpe coloco 'permanent' siempre se muestra el menú
+- renderizo condicionalmente según las dimensiones de la pantalla para que siempre se muestre el menú cuando esté en horizontal
+
+~~~js
+import React from 'react'
+import {DrawerContentComponentProps, DrawerContentScrollView, DrawerItemList, createDrawerNavigator} from '@react-navigation/drawer'
+import { StackNavigator } from './StackNavigator'
+import { ProfileScreen } from '../screens/profiles/ProfileScreen'
+import { View, Text, useWindowDimensions } from 'react-native'
+
+
+const Drawer = createDrawerNavigator()
+
+const SideMenuNavigator = () => {
+
+  const dimensions = useWindowDimensions();
+  
+    return (
+    <Drawer.Navigator 
+      drawerContent={(props)=> <CustomDrawerContent {...props} />}
+    screenOptions={{
+      headerShown: false,
+      drawerType: dimensions.width >= 758? 'permanent': 'slide', //siempre se mostrará el menú en horizontal
+      drawerActiveBackgroundColor: 'orange',
+      drawerActiveTintColor: 'white',
+      drawerInactiveTintColor: 'black',
+      drawerItemStyle:{
+        borderRadius: 100,
+        paddingHorizontal: 20
+      }
+      }} >
+        <Drawer.Screen name="MenuItem1" component={StackNavigator} />
+        <Drawer.Screen name="Profile" component={ProfileScreen} />
+    </Drawer.Navigator>
+  )
+}
+
+const CustomDrawerContent = (props: DrawerContentComponentProps)=>{
+  
+  return(<DrawerContentScrollView>
+    <View style={{
+      height: 200,
+      backgroundColor: '#ded1a9',
+      margin: 30,
+      borderRadius: 50
+    }}><Text style={{color: 'white', fontSize:30, lineHeight: 200, textAlign: 'center'}}>Image</Text>
+    </View>
+
+    <DrawerItemList {...props} />
+  </DrawerContentScrollView>)
+}
+
+export default SideMenuNavigator
+~~~
+-----
+
+## useSafeAreaInserts
+
+- Voy a ProfileScreen
+- A veces hay teléfonos que tienen un notch muy grande y no es seguro que haya contenido en esa zona del teléfono
+- El SafeAreaView limita como muestro el contenido, por ejemplo con un ScrollView
+- Para que no limite el scroll usamos useSfaeAreaInsets
+- Uso el dispatch con DrawerActions para disparar en el onPress el Menu
+- Puedo tipar el useNavigation si así lo deseo
+- También se puede trabajar siempre con el dispatch, con rutas específicas (se verá más adelante)
+
+~~~js
+import React from 'react'
+import { Text, View } from 'react-native'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { PrimaryButton } from '../../components/shared/PrimaryButton'
+import { DrawerActions, useNavigation } from '@react-navigation/native'
+
+export const ProfileScreen = () => {
+
+  const {top} = useSafeAreaInsets()
+  const navigator = useNavigation()
+  
+  return (
+    <View style={{flex: 1, paddingHorizontal: 20, marginTop: top+10}}>
+        <Text style={{textAlign: 'center', fontSize:30, marginBottom: 10}} >Profile</Text>
+
+        <View style={{flex: 1, flexDirection: 'column', justifyContent: 'flex-end', marginBottom: 10}}>
+          <PrimaryButton label="Abrir Menú" onPress={()=>navigator.dispatch(DrawerActions.toggleDrawer)}/>
+        </View>
+    </View>
+  )
+}
+~~~
+-------
+
+## Bottom Tabs, Material Top Tabs
+
+- 
