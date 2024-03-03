@@ -801,4 +801,197 @@ export const ProfileScreen = () => {
 
 ## Bottom Tabs, Material Top Tabs
 
-- 
+- Instalación
+
+> npm i @react-navigation/bottom-tabs
+
+- En src/routes creo BottomNavigator.tsx
+
+~~~js
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { Tab1Screen } from '../screens/tabs/Tab1Screen';
+import { Tab2Screen } from '../screens/tabs/Tab2Screen';
+import { Tab3Screen } from '../screens/tabs/Tab3Screen';
+
+const Tab = createBottomTabNavigator();
+
+export const BottomNavigator=()=> {
+  return (
+    <Tab.Navigator>
+      <Tab.Screen name="Tab1" component={Tab1Screen} />
+      <Tab.Screen name="Tab2" component={Tab2Screen} />
+      <Tab.Screen name="Tab3" component={Tab3Screen} />
+    </Tab.Navigator>
+  );
+}
+~~~
+
+- Hay que determinar en qué momento voy a mostrar el Bottom
+- Para mantener el Drawer, en liugar del StackNavigator coloco el BottomNavigator
+- App.tsx
+
+~~~js
+import React from 'react'
+import {DrawerContentComponentProps, DrawerContentScrollView, DrawerItemList, createDrawerNavigator} from '@react-navigation/drawer'
+import { StackNavigator } from './StackNavigator'
+import { ProfileScreen } from '../screens/profiles/ProfileScreen'
+import { View, Text, useWindowDimensions } from 'react-native'
+import { BottomNavigator } from './BottomNavigator'
+
+
+const Drawer = createDrawerNavigator()
+
+const SideMenuNavigator = () => {
+
+  const dimensions = useWindowDimensions();
+  
+    return (
+    <Drawer.Navigator 
+      drawerContent={(props)=> <CustomDrawerContent {...props} />}
+    screenOptions={{
+      headerShown: false,
+      drawerType: dimensions.width >= 758? 'permanent': 'slide', //siempre se mostrará el menú en horizontal
+      drawerActiveBackgroundColor: 'orange',
+      drawerActiveTintColor: 'white',
+      drawerInactiveTintColor: 'black',
+      drawerItemStyle:{
+        borderRadius: 100,
+        paddingHorizontal: 20
+      }
+      }} >
+        <Drawer.Screen name="Tabs" component={BottomNavigator} />
+        <Drawer.Screen name="Profile" component={ProfileScreen} />
+    </Drawer.Navigator>
+  )
+}
+
+const CustomDrawerContent = (props: DrawerContentComponentProps)=>{
+  
+  return(<DrawerContentScrollView>
+    <View style={{
+      height: 200,
+      backgroundColor: '#ded1a9',
+      margin: 30,
+      borderRadius: 50
+    }}><Text style={{color: 'white', fontSize:30, lineHeight: 200, textAlign: 'center'}}>Image</Text>
+    </View>
+
+    <DrawerItemList {...props} />
+  </DrawerContentScrollView>)
+}
+
+export default SideMenuNavigator
+~~~
+
+- Necesito el menú de hamburguesa para desplegar el menú lateral
+- Primero personalicemos el BottomNavigator
+- Uso sceneContainerStyle para el background de la pantalla
+- Uso otras props para personalizar
+- En options, puedo pasarle el título para que se muestre arriba
+- También el tabBarIcon que pide un functional component, le puedo pasar un icono o lo que yo quiera
+  - Puedo desestructurar el color de las props.
+  - Esto hace que el color del icono (en este caso el texto) sea visible cuando la tab esté activa
+
+~~~js
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { Tab1Screen } from '../screens/tabs/Tab1Screen';
+import { Tab2Screen } from '../screens/tabs/Tab2Screen';
+import { Tab3Screen } from '../screens/tabs/Tab3Screen';
+import { Text } from 'react-native';
+
+const Tab = createBottomTabNavigator();
+
+export const BottomNavigator=()=> {
+  return (
+    <Tab.Navigator
+    sceneContainerStyle={{
+        backgroundColor: 'rgba(241, 237, 231, 0.2)',
+    }}
+    screenOptions={{
+        //headerShown: false,
+        tabBarLabelStyle:{
+            marginBottom: 5
+        },
+        headerStyle: { //eliminar la linea 
+            elevation: 0,
+            borderColor: 'transparent',
+            shadowColor: 'transparent'
+        },
+        tabBarStyle:{ //para eliminar la linea en ios
+            borderTopWidth: 0,
+            elevation: 0
+        }
+
+    }}
+    >
+      <Tab.Screen name="Tab1" options={{title: "Tab1", tabBarIcon: ({color})=>(<Text style={{color: color}}>Tab</Text>)}} component={Tab1Screen} />
+      <Tab.Screen name="Tab2" options={{title: "Tab2", tabBarIcon: ({color})=>(<Text style={{color: color}}>Tab</Text>)}}  component={Tab2Screen} />
+      <Tab.Screen name="Tab3" options={{title: "Tab3", tabBarIcon: ({color})=>(<Text style={{color: color}}>Tab</Text>)}}  component={Tab3Screen} />
+    </Tab.Navigator>
+  );
+}
+~~~
+----
+
+## Menú de hamburguesa
+
+- En Tab1Screen llamo al useNavigation
+- Uso de nuevo el useEffect con navigation.setOptions
+
+~~~js
+import { DrawerActions, useNavigation } from '@react-navigation/native'
+import React, { useEffect } from 'react'
+import { Pressable, Text, View } from 'react-native'
+
+export const Tab1Screen = () => {
+
+  const navigation = useNavigation()
+
+  useEffect(()=>{
+    navigation.setOptions({
+      headerLeft: ()=>(
+       <Pressable onPress={()=>navigation.dispatch(DrawerActions.toggleDrawer)}>
+        <Text>Menu</Text>
+       </Pressable> 
+      )
+    })
+  }, [])
+
+  return (
+    <View>
+        <Text>Tab1Screen</Text>
+    </View>
+  )
+}
+~~~
+
+- Ahora aparece el Menu que si toco me muestra el menú lateral
+- Hacer esto en cada uno de los tabs no sería lo adecuado. Mejor crear un componente para ello
+- Creo en componentes/shared/HamburguerMenu.tsx
+
+~~~js
+import { DrawerActions, useNavigation } from '@react-navigation/native'
+import React, { useEffect } from 'react'
+import { Pressable, Text } from 'react-native'
+
+const HamburguerMenu = () => {
+  
+    const navigation = useNavigation()
+
+    useEffect(()=>{
+      navigation.setOptions({
+        headerLeft: ()=>(
+         <Pressable onPress={()=>navigation.dispatch(DrawerActions.toggleDrawer)}>
+          <Text>Menu</Text>
+         </Pressable> 
+        )
+      })
+    }, [])
+  
+    return (<></>) //hay que regresar siempre un JSX, se puede usar un Fragment vacío
+}
+
+export default HamburguerMenu
+~~~
+
+- Lo coloco en el return de Tab1, Tab2 y Tab3
