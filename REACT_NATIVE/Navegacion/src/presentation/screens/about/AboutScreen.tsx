@@ -4,7 +4,7 @@ import { Text, View } from 'react-native'
 export const AboutScreen = () => {
   return (
     <View>
-        <Text>AboutScreen</Text>
+        <Text style={{fontSize: 40, textAlign: 'center', marginVertical: 10}} >AboutScreen</Text>
     </View>
   )
 }

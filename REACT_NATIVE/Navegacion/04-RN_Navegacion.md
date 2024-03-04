@@ -859,7 +859,7 @@ const SideMenuNavigator = () => {
         paddingHorizontal: 20
       }
       }} >
-        <Drawer.Screen name="Tabs" component={BottomNavigator} />
+        <Drawer.Screen name="Home" component={BottomNavigator} />
         <Drawer.Screen name="Profile" component={ProfileScreen} />
     </Drawer.Navigator>
   )
@@ -995,3 +995,119 @@ export default HamburguerMenu
 ~~~
 
 - Lo coloco en el return de Tab1, Tab2 y Tab3
+------ 
+
+## Material Top Navigator
+
+- Instalación
+
+> npm i @react-navigation/material-top-tabs react-native-tab-view
+> npm i react-native-pager-view
+
+- Copio el ejemplo de la documentación y lo adapto a mi contenido
+
+~~~js
+import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs';
+import { ProfileScreen } from '../screens/profiles/ProfileScreen';
+import { AboutScreen } from '../screens/about/AboutScreen';
+
+const Tab = createMaterialTopTabNavigator();
+
+export const  TopNavigator=()=> {
+  return (
+    <Tab.Navigator>
+      <Tab.Screen name="Perfil" component={ProfileScreen} />
+      <Tab.Screen name="About" component={AboutScreen} />
+    </Tab.Navigator>
+  );
+}
+~~~
+
+- Para usarlo, pongamos que quiero mostrarlo en el Tab2
+- Entonces, voy a BottomNavigator, y en lugar de mostrar el Tab2Screen, coloco el TopNavigator
+
+~~~js
+<Tab.Screen name="Tab2"  options={{title: "Tab2", tabBarIcon: ({color})=>(<Text style={{color: color}}>Tab</Text>)}}  component={TopNavigator} />
+~~~
+------
+
+## Instalar iconos
+
+> npm i react-native-vector-icons
+> npm i -D @types/react-native-vector-icons
+
+- Editar android/app/build.gradle
+
+~~~
+project.ext.vectoricons =[
+  iconFontNames: ['Ionicons.ttf']
+]
+
+apply from: file ("../../node_modules/react-native-vector-icons/fonts.gradle")
+~~~
+
+- Para usarlo importo Icon
+
+~~~js
+import React from 'react'
+import {Text, View } from 'react-native'
+import HamburguerMenu from '../../components/shared/HamburguerMenu'
+import Icon from 'react-native-vector-icons/Ionicons'
+
+export const Tab3Screen = () => {
+  return (
+    <View>
+      <HamburguerMenu />
+        <Text style={{fontSize:40, textAlign: 'center', marginVertical: 10}}>Tab3Screen</Text>
+        <Icon name='rocket' size={30} color="#2d6ab9" style={{textAlign: 'center'}} />
+    </View>
+  )
+}
+~~~
+
+- Para colocar los iconos en las Tabs puedo usar Icon o customizar un componente
+
+~~~js
+import React from 'react'
+import { Icon } from 'react-native-vector-icons/Icon'
+
+interface Props{
+    name: string
+    size: number
+    color: string
+}
+
+
+const IconComponent = ({name,size,color}: Props) => {
+  return (
+    <Icon name={name} size={size} color={color}     />
+  )
+}
+
+export default IconComponent
+~~~
+
+- Ahora solo tengo que colocarlo.
+
+~~~js
+import React from 'react'
+import {Text, View } from 'react-native'
+import HamburguerMenu from '../../components/shared/HamburguerMenu'
+import Icon from 'react-native-vector-icons/Ionicons'
+
+export const Tab3Screen = () => {
+  return (
+    <View>
+      <HamburguerMenu />
+        <Text style={{fontSize:40, textAlign: 'center', marginVertical: 10}}>Tab3Screen</Text>
+        <Icon name='rocket' size={30} color="#2d6ab9" style={{textAlign: 'center'}} />
+    </View>
+  )
+}
+~~~
+
+- Para colocarlo en las tabs
+
+~~~js
+<Tab.Screen name="Tab3" options={{title: "Tab3", tabBarIcon:()=><IconComponent name="bicycle" size={30} color="orange" /> }}  component={Tab3Screen} />
+~~~

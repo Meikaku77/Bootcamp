@@ -1,9 +1,10 @@
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Tab1Screen } from '../screens/tabs/Tab1Screen';
-import { Tab2Screen } from '../screens/tabs/Tab2Screen';
 import { Tab3Screen } from '../screens/tabs/Tab3Screen';
 import { Text } from 'react-native';
-
+import {TopNavigator} from '../routes/TopNavigator'
+import { StackNavigator } from './StackNavigator';
+import IconComponent from '../components/shared/IconComponent';
 const Tab = createBottomTabNavigator();
 
 export const BottomNavigator=()=> {
@@ -29,9 +30,9 @@ export const BottomNavigator=()=> {
 
     }}
     >
-      <Tab.Screen name="Tab1" options={{title: "Tab1", tabBarIcon: ({color})=>(<Text style={{color: color}}>Tab</Text>)}} component={Tab1Screen} />
-      <Tab.Screen name="Tab2" options={{title: "Tab2", tabBarIcon: ({color})=>(<Text style={{color: color}}>Tab</Text>)}}  component={Tab2Screen} />
-      <Tab.Screen name="Tab3" options={{title: "Tab3", tabBarIcon: ({color})=>(<Text style={{color: color}}>Tab</Text>)}}  component={Tab3Screen} />
+      <Tab.Screen name="Tab1" options={{title: "Tab1", tabBarIcon: ()=><IconComponent name="airplane" size={30} color="orange" /> }} component={StackNavigator} />
+      <Tab.Screen name="Tab2"  options={{title: "Tab2", tabBarIcon: ()=><IconComponent name="alarm" size={30} color="orange" /> }} component={TopNavigator} />
+      <Tab.Screen name="Tab3" options={{title: "Tab3", tabBarIcon:()=><IconComponent name="bicycle" size={30} color="orange" /> }}  component={Tab3Screen} />
     </Tab.Navigator>
   );
 }

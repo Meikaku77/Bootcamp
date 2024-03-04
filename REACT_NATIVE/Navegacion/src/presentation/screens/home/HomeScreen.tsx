@@ -4,6 +4,7 @@ import { globalStyles } from '../../theme/theme'
 import { type NavigationProp, useNavigation, DrawerActions } from '@react-navigation/native'
 import { PrimaryButton } from '../../components/shared/PrimaryButton'
 import type {RootstackParams } from '../../routes/StackNavigator'
+import HamburguerMenu from '../../components/shared/HamburguerMenu'
 
 export const HomeScreen = () => {
   
@@ -14,7 +15,7 @@ export const HomeScreen = () => {
       navigation.setOptions({
           headerLeft:()=>( 
               <Pressable onPress={()=>navigation.dispatch(DrawerActions.toggleDrawer)}>
-              <Text style={{paddingLeft: 10}}>Menu</Text> 
+              <HamburguerMenu />
               </Pressable>  
           )
         })
