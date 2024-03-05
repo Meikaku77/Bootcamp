@@ -1,0 +1,3 @@
+# REACT NATIVE - App Películas
+
+- 

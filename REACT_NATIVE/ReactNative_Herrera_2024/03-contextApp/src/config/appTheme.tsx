@@ -10,13 +10,15 @@ export const styles = StyleSheet.create({
   title:{
     fontSize: 20,
     fontWeight: 'bold',
-    color: 'black'
+    color: 'black',
+    textAlign: 'center'
   },
 
   primaryButton:{
     backgroundColor: 'purple',
     padding: 10,
     borderRadius: 5,
-    marginVertical: 10
+    marginVertical: 10,
+    
   }
 })

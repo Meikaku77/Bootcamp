@@ -8,6 +8,7 @@ export const ProfileScreen  = () => {
 
   const name = useProfileStore(get=> get.name)
   const email = useProfileStore(get=> get.email)
+  const changeProfile = useProfileStore(get=>get.changeProfile)
 
   return (
     <View style={styles.container} >
@@ -24,6 +25,11 @@ export const ProfileScreen  = () => {
       onPress={()=> useProfileStore.setState({email: "migue@gmail.com"})}
       >
         <Text style={styles.title}>Cambio email</Text>
+      </Pressable>
+      <Pressable style={styles.primaryButton} 
+      onPress={()=> changeProfile("Bill Murray", "billybilly@gmail.com")}
+      >
+        <Text style={styles.title}>regresar estado</Text>
       </Pressable>
     </View>
   )

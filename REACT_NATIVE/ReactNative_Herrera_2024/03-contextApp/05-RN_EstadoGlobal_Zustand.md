@@ -207,3 +207,92 @@ export const ProfileScreen  = () => {
   )
 }
 ~~~
+
+- En la documentación de Zustand hay veces que define la lógica en la interfaz y otras crea un export type Actions donde define las acciones
+- Uso **set** para cambiar el estado
+
+~~~js
+import { create } from "zustand"
+
+
+interface ProfileState{
+    name: string
+    email: string
+    changeProfile: (name: string, email: string)=> void
+}
+
+export const useProfileStore = create<ProfileState>()((set, get)=>({
+    name: 'Bill Murray',
+    email: "billybilly@gmail.com",
+
+    changeProfile: (name: string, email: string)=>{
+        set({name, email})
+    }
+}))
+~~~
+
+- Si necesito acceso a esa función la extraigo de useProfileStore
+
+~~~js
+
+import React from 'react'
+import { Pressable, Text, View } from 'react-native'
+import { styles } from '../../config/appTheme'
+import { useProfileStore } from '../store/profile-store'
+
+export const ProfileScreen  = () => {
+
+  const name = useProfileStore(get=> get.name)
+  const email = useProfileStore(get=> get.email)
+  const changeProfile = useProfileStore(get=>get.changeProfile)
+
+  return (
+    <View style={styles.container} >
+      <Text style={styles.title}>{name}</Text>
+      <Text style={styles.title}>{email}</Text>
+
+      <Pressable style={styles.primaryButton} 
+      onPress={()=>useProfileStore.setState({name: "Miguel Castaño"})}
+      >
+        <Text style={styles.title}>Cambio Nombre</Text>
+      </Pressable>
+
+      <Pressable style={styles.primaryButton} 
+      onPress={()=> useProfileStore.setState({email: "migue@gmail.com"})}
+      >
+        <Text style={styles.title}>Cambio email</Text>
+      </Pressable>
+      <Pressable style={styles.primaryButton} 
+      onPress={()=> changeProfile("Bill Murray", "billybilly@gmail.com")}
+      >
+        <Text style={styles.title}>regresar estado</Text>
+      </Pressable>
+    </View>
+  )
+}
+~~~
+
+- Zustand además tiene muchos middlewares poderosos
+- Creemos un counter!
+
+~~~js
+import { create } from "zustand"
+
+
+interface CounterState{
+    count: number
+    increment: (value: number)=> void
+}
+
+export const useCounterStore = create<CounterState>()((set,get)=>({
+
+    count: 1,
+    increment: (value)=>{set(state=> ({count:state.count + value}))},
+}))
+~~~
+
+- Otra manera sería
+
+~~~js
+increment: (value)=>{set({count: get().count + value})},
+~~~
