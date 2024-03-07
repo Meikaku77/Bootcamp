@@ -215,7 +215,7 @@ export class AxiosAdapter implements HttpAdapter{
 export interface NowPlayingResponse {
     dates:         Dates;
     page:          number;
-    results:       Movie[];
+    results:       Result[];
     totalPages:   number;
     totalResults: number;
 }
@@ -225,21 +225,21 @@ export interface Dates {
     minimum: string;
 }
 
-export interface Movie {
+export interface Result { //Esto sería Movie
     adult:             boolean;
-    backdropPath:     string;
-    genreIds:         number[];
+    backdrop_path:     string;
+    genre_ids:         number[];
     id:                number;
-    originalLanguage: string;
-    originalTitle:    string;
+    original_language: string;
+    original_title:    string;
     overview:          string;
     popularity:        number;
-    posterPath:       string;
-    releaseDate:      string;
+    poster_path:       string;
+    release_date:      string;
     title:             string;
     video:             boolean;
-    voteAverage:      number;
-    voteCount:        number;
+    vote_average:      number;
+    vote_count:        number;
 }
 
 /*
@@ -281,6 +281,8 @@ export const moviesNowPlayingUseCase = async(fetcher: HttpAdapter): Promise<Movi
     try {
         const nowPlaying = await fetcher.get<NowPlayingResponse>('/now_playing')
 
+        console.log({nowPlaying})
+
         return []//Aquí voy a tener que transformar la data para adaptarlo a como lo he tipado yo en mi entidad
                  //y no con los nombres y el conjunto de propiedades que viene desde la DB
         
@@ -293,10 +295,351 @@ export const moviesNowPlayingUseCase = async(fetcher: HttpAdapter): Promise<Movi
 
 ## Custom Hook useMovies
 
-- 
+- Creo en src/presentation/hooks/useMovies.tsx
+- Llamo al caso de uso en un useEffect
+- Antes creo un index.ts en use-cases y lo exporto todo
+
+~~~js
+export * from './movies/now-playing.use-case'
+~~~
+
+- Puedo hacer el import com UseCases para disponer de los distintos casos de uso que vaya creando con la notación de punto
+- La función me pide el fetcher de tipo HttpAdapter.
+- Creo un nuevo adaptador llamado MovieDBAdapter con un ainstancia de mi adaptador Axios, le paso lo que necesita
+  - En baseURL le paso la url hasta now_playing (sin incluir este ni el slash que le precede)
+  - En params le paso la api_key y el language
+
+~~~js
+import { AxiosAdapter } from "./axios.adapter";
+
+export const MovieDBFetcher = new AxiosAdapter({
+    baseURL: "https://api.themoviedb.org/3/movie",
+    params: {
+        api_key: "mi_api_key", //será una variable de entorno
+        language: 'es'
+    }
+})
+~~~
+
+- Le paso el fetcher (MovieDBFetcher) al caso de uso
+- Llamo la función dentro del useEffect
+
+~~~js
+import React, { useEffect, useState } from 'react'
+import { Movie } from '../../core/entities/movie.entity'
+import * as UseCases from '../../core/use-cases'
+import { MovieDBFetcher } from '../../config/adapters/http/movieDB.adapter'
+
+const useMovies = () => {
+
+    const [isLoading, setIsLoading] = useState(true)
+    const [nowPlaying, setNowPlaying] = useState<Movie[]>([])
+
+    useEffect(()=>{
+        initLoad()
+    },[])
+
+    const initLoad= async()=>{
+        const nowPlayingMovies = await UseCases.moviesNowPlayingUseCase(MovieDBFetcher)
+    }
+    
+    return {
+        
+
+    }
+}
+
+export default useMovies
+~~~
+
+- En HomeScreen llamo al hook, no desestructuro nada porque todavñia no regresa nada
+
+~~~js
+import React from 'react'
+import { Text, View } from 'react-native'
+import useMovies from '../../hooks/useMovies'
+
+export const HomeScreen  = () => {
+
+  const {} = useMovies()
+  
+  return (
+    <View>
+      <Text>HomeScreen</Text>
+    </View>
+  )
+}
+~~~
+
+- Ahora en consola (por el console.log de nowPlaying en el caso de uso) deberían aparecer los resultados pero con Object Object
+- Falta transformar la data resultante en algo que luzca como mi interfaz de Movie, para usar mi propia implementación
+-------
+
+## Patrón Mapper - MovieMapper
+
+- Creo en src/infraestructure/mappers/movie.mapper.ts
+- Puedo hacer el mapper con una función pero lo haré con una clase
+- Creo un método estático. Al ser estático no necesito instanciar la clase
+- El método recibe result de tipo Result (mirar la interfaz de MovieDB) y regresará una Movie. 
+- Si Movie fuera una clase tendría que instanciarla pero hasta ahora la hemos manejado con una interfaz
+- releaseDate me regresa un dato de tipo string, por lo que creo la fecha con new Date
+- Para ver la imagen de la propiedad poster, esta solo devuelve un string que no me sirve, para visualizarla necesito añadir https://image.tmdb.org/t/p/w500/url_de_posterPath
+- Uso un template string, quito el slash final porque el string vendrá con el slash inicial
+
+~~~js
+import { Movie } from "../../core/entities/movie.entity";
+import { Result } from "../interfaces/movieDBResponses";
+
+export class MovieMapper{
+
+    static fromMovieDBResultToEntity(result: Result): Movie{
+        return {
+            id: result.id,
+            title: result.title,
+            description: result.overview,
+            releaseDate: new Date(result.release_date),
+            rating: result.vote_average,
+            poster: `https://image.tmdb.org/t/p/w500${result.poster_path}`,
+            backdrop: `https://image.tmdb.org/t/p/w500${result.backdrop_path}`
+        }
+    }
+}
+~~~
+
+- Si la url de poster no viniera, puedo manejar la excepción en el mapper
+- Voy al caso de uso.
+- Se recomienda que los casos de uso sean funciones puras que resuelvan con los argumentos dados
+  - Pero en este caso quiero transformar la data por lo que usaré el mapper
+  - En .results tengo la data, hago un map y la paso por el mapper
+  - En JS cuando tengo el mismo argumento pasado como parámetro para una función puedo obviar ambos
+
+~~~js
+import { HttpAdapter } from "../../../config/adapters/http/http.adapter";
+import { NowPlayingResponse } from "../../../infraestructure/interfaces/movieDBResponses";
+import { MovieMapper } from "../../../infraestructure/mappers/movie.mapper";
+import { Movie } from "../../entities/movie.entity";
 
 
+export const moviesNowPlayingUseCase = async(fetcher: HttpAdapter): Promise<Movie[]>=>{
+    try {
+        const nowPlaying = await fetcher.get<NowPlayingResponse>('/now_playing')
 
+       
+
+     //return nowPlaying.results.map(result=>MovieMapper.fromMovieDBResultToEntity(result))
+       
+       return nowPlaying.results.map(MovieMapper.fromMovieDBResultToEntity)
+        
+    } catch (error) {
+        throw new Error (`Error fetching movies - Now Playing`)
+    }
+}
+~~~
+
+- Hago un console.log en la función initLoad del hook useMovies para visualizar el resultado en consola
+- Retorno el state de isLoading y nowPlaying que es donde estan mis películas
+
+~~~js
+import React, { useEffect, useState } from 'react'
+import { Movie } from '../../core/entities/movie.entity'
+import * as UseCases from '../../core/use-cases'
+import { MovieDBFetcher } from '../../config/adapters/http/movieDB.adapter'
+
+const useMovies = () => {
+
+    const [isLoading, setIsLoading] = useState(true)
+    const [nowPlaying, setNowPlaying] = useState<Movie[]>([])
+
+    useEffect(()=>{
+        initLoad()
+    },[])
+
+    const initLoad= async()=>{
+        const nowPlayingMovies = await UseCases.moviesNowPlayingUseCase(MovieDBFetcher)
+        setNowPlaying(nowPlayingMovies)
+        //console.log({nowPlayingMovies})
+    }
+    
+    return {
+        isLoading,
+        nowPlaying
+    }
+}
+
+export default useMovies
+~~~
+----
+
+## Casos de uso restantes
+
+- Quiero implementar tres nuevos casos de uso
+  - /upcoming
+  - /top_rated
+  - /popular  moviesPopularUseCase
+
+- Creo el caso de uso y le paso el fetcher, devuelvo una promesa del tipo entity que yo me cree basándome en la interfaz que extraigo con paste JSON as code
+- Hago un llamado al endpoint, copio el resultado y uso pasteJSON as code para obtener las interfaces
+- Creo mi entity para luego crear el mapper y obtener la data como yo quiero sin depender de terceros
+- Expongo el caso de uso Upcoming
+- upcoming.inteface.ts
+
+~~~js
+// Generated by https://quicktype.io
+
+export interface UpcomingResults {
+    dates:         Dates;
+    page:          number;
+    results:       Result[];
+    total_pages:   number;
+    total_results: number;
+}
+
+export interface Dates {
+    maximum: string;
+    minimum: string;
+}
+
+export interface Result {
+    adult:             boolean;
+    backdrop_path:     string;
+    genre_ids:         number[];
+    id:                number;
+    original_language: string;
+    original_title:    string;
+    overview:          string;
+    popularity:        number;
+    poster_path:       string;
+    release_date:      string;
+    title:             string;
+    video:             boolean;
+    vote_average:      number;
+    vote_count:        number;
+}
+~~~
+
+- Creo mi entity
+
+~~~js
+export interface UpcomingMovie{
+    genreIds: number[]
+    id: number
+    originalLanguage: string
+    originalTitle: string
+    posterPath: string,
+    backdropPath: string
+    releaseDate: Date
+    rate: number
+}
+~~~
+
+- Creo el Mapper
+
+~~~js
+import { UpcomingMovie } from "../../core/entities/upcoming.entity";
+import { Result } from "../interfaces/upcomingMovies.interface";
+
+export class UpcomingMovieMapper{
+
+    static getUpcomingResultToEntity (result: Result ) : UpcomingMovie{
+        return {
+            genreIds: result.genre_ids,
+            id: result.id,
+            originalLanguage: result.original_language,
+            originalTitle: result.original_title,
+            posterPath: `https://image.tmdb.org/t/p/w500${result.poster_path}`,
+            backdropPath: `https://image.tmdb.org/t/p/w500${result.backdrop_path}`,
+            releaseDate: new Date(result.release_date),
+            rate: result.vote_average
+        }
+    }
+}
+~~~
+
+- Voy al caso de uso y utilizo .map
+- Lo exporto en el archivo de barril
+
+~~~js
+import { HttpAdapter } from "../../../config/adapters/http/http.adapter"
+import { UpcomingResults } from "../../../infraestructure/interfaces/upcomingMovies.interface"
+import { UpcomingMovieMapper } from "../../../infraestructure/mappers/upcoming.mapper"
+import { UpcomingMovie } from "../../entities/upcoming.entity"
+
+
+export const moviesUpcomingUseCase= async(fetcher: HttpAdapter): Promise<UpcomingMovie[] | undefined>=>{
+    try {
+        
+        const upcomingMovies  = await fetcher.get<UpcomingResults>('/upcoming')
+
+        return upcomingMovies.results.map(UpcomingMovieMapper.getUpcomingResultToEntity)
+
+    } catch (error) {
+     throw new Error(`fetch error to upcoming movies use case`)   
+    }
+}
+~~~
+
+- index.ts
+
+~~~js
+export * from './movies/now-playing.use-case'
+export * from './movies/upcoming.use-case'
+~~~
+
+- Creo el adaptador
+
+~~~js
+import { AxiosAdapter } from "./axios.adapter";
+
+export const UpcomingAdapter = new AxiosAdapter({
+    baseURL: 'https://api.themoviedb.org/3/movie',
+    params:{
+        api_key: "fe1099f21bfaef01ab67feb300828d6d",
+        language: 'es'
+    }
+})
+~~~
+
+- Creo el hook
+
+~~~js
+import React, { useEffect, useState } from 'react'
+import { UpcomingMovie } from '../../core/entities/upcoming.entity'
+import * as UseCases from '../../core/use-cases'
+import { UpcomingAdapter } from '../../config/adapters/http/upcoming.adapter'
+
+const useUpcoming = () => {
+  
+    const [isLoading, setIsLoading] = useState(true)
+    const [upcomingMovies, setUpcomingMovies] = useState<UpcomingMovie[] | undefined>([])
+
+    useEffect(()=>{
+        initLoadUpcoming()
+    }, [])
+
+
+    const initLoadUpcoming = async ()=>{
+
+        const upcomingMoviesResult = await UseCases.moviesUpcomingUseCase(UpcomingAdapter)
+
+        console.log({upcomingMoviesResult})
+
+        setUpcomingMovies(upcomingMoviesResult)
+    }
+    
+  
+    return {
+        isLoading,
+        upcomingMovies
+  }
+}
+
+export default useUpcoming
+~~~
+
+- Lo llamo en HomeScreen para ver si funciona 
+- Por algún motivo no muestra el array de genreIds, solo muestra Array
+- Hago el resto de casos de uso
+- Para subirlo a git **he quitado la API_KEY hasta que no configure las variables de entorno**
 
 
 
