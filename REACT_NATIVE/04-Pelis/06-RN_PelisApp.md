@@ -164,8 +164,138 @@ export abstract class HttpAdapter{
 - Retorno la data
 
 ~~~js
+import { HttpAdapter } from "./http.adapter";
+import axios, { AxiosInstance } from 'axios'
 
+interface Options{
+    baseURL: string,
+    params: Record<string,string>
+}
+
+export class AxiosAdapter implements HttpAdapter{
+
+    private axiosInstance : AxiosInstance;
+
+    constructor(options: Options){
+        this.axiosInstance = axios.create({
+            baseURL: options.baseURL,
+            params: options.params
+        })
+    }
+
+
+    async get<T>(url: string, options?: Record<string, unknown>) : Promise<T>{
+
+        try {
+            const {data} = await this.axiosInstance.get<T>(url,options)
+            
+            return data
+        
+        } catch (error) {
+            throw new Error(`Error fetching get: ${url}` )
+        }
+    }
+}
 ~~~
+-----
+
+## Casos de uso - Now Playing
+
+- En /core/use-cases/movies/now-playing.use-case.tsx
+- Now playing debe traer las peliculas usando el adaptador de axios
+- Se busca que los casos de uso sean agnósticos (que no necesiten paquetes de terceros para funcionar)
+- Le paso de parámetro *fetcher* que serña del tipo HttpAdapater (el mismo que mi adaptador de axios)
+- Podría pasar el url como parámetro para hacerlo más genérico, pero yo se que en este caso de uso siempre voy a llamar al mismo endpoint
+- Como la cabecera de la url la voy a configurar en el adaptador, añado solo la parte de la url de '/now_playing'
+- Hay que tipar la respuesta, por lo que hago un llamado al endpoint desde THUNDERCLIENT y uso paste JSON as code
+- La pego en infraestructure/interfaces/movieDBResponses.tsx
+- Cambio algunos nombres y en lugar de usar guiones bajos uso camelCase
+
+~~~js
+export interface NowPlayingResponse {
+    dates:         Dates;
+    page:          number;
+    results:       Movie[];
+    totalPages:   number;
+    totalResults: number;
+}
+
+export interface Dates {
+    maximum: string;
+    minimum: string;
+}
+
+export interface Movie {
+    adult:             boolean;
+    backdropPath:     string;
+    genreIds:         number[];
+    id:                number;
+    originalLanguage: string;
+    originalTitle:    string;
+    overview:          string;
+    popularity:        number;
+    posterPath:       string;
+    releaseDate:      string;
+    title:             string;
+    video:             boolean;
+    voteAverage:      number;
+    voteCount:        number;
+}
+
+/*
+export enum OriginalLanguage {
+    En = "en",
+    Es = "es",
+}
+*/
+~~~
+
+- Lo que va a regresar el fetcher va a ser de tipo NowPlayingResponse
+- Para tipar la respuesta de la promisa bien podría usar la interfaz de Movie, pero podría ser que la DB cambiara en un futuro, y eso podría darme un dolor de cabeza
+- En lugar de usar una interfaz proveniente de la db, creo /core/entities/movie.entity.tsx
+- Usualmente la entity es una clase, pero también puedo trabajar con una interfaz y luego transformarla en una clase
+
+~~~js
+export interface Movie{
+    id: number
+    title: string
+    description: string
+    releaseDate: Date
+    rating: number
+    poster: string
+    backdrop: string
+}
+~~~
+
+- Entonces, voy a usar mi propio modelo. En la respuesta los nombres vienen diferente, por ejemplo *poster_path* en lugar de poster
+- Voy a tener que transformar la data de la respuesta para que concuerde con mi entity, ya que la respuesta de la DB no es exactamente igual
+- Todo esto lo hago porque si el día de mañana la interfaz que extraje de la DB cambia, mi aplicación crashearía
+
+~~~js
+import { HttpAdapter } from "../../../config/adapters/http/http.adapter";
+import { NowPlayingResponse } from "../../../infraestructure/interfaces/movieDBResponses";
+import { Movie } from "../../entities/movie.entity";
+
+
+export const moviesNowPlayingUseCase = async(fetcher: HttpAdapter): Promise<Movie[]>=>{
+    try {
+        const nowPlaying = await fetcher.get<NowPlayingResponse>('/now_playing')
+
+        return []//Aquí voy a tener que transformar la data para adaptarlo a como lo he tipado yo en mi entidad
+                 //y no con los nombres y el conjunto de propiedades que viene desde la DB
+        
+    } catch (error) {
+        throw new Error (`Error fetching movies - Now Playing`)
+    }
+}
+~~~
+-------
+
+## Custom Hook useMovies
+
+- 
+
+
 
 
 
