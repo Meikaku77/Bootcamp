@@ -37,7 +37,10 @@ const useMovies = () => {
     
     return {
         isLoading,
-        nowPlaying
+        nowPlaying,
+        popularMovie,
+        topRatedMovie,
+        upcomingMovie
     }
 }
 
