@@ -1,4 +1,4 @@
-# REACT NATIVE - App Películas
+# REACT NATIVE - App Películas parte 1
 
 - Vamos a hacer el esqueleto y la estructura necesaria para la aplicación
 - Lo haremos bajo principios de arquitectura DDD y patrones (haremos uso del patrón repositorio)
@@ -697,5 +697,7 @@ const useMovies = () => {
 export default useMovies
 ~~~
 
-
+- **NOTA:** esta es una aproximación al DDD, faltarían los data sources y el repositorio que interactuaría con los casos de uso.
+    - Los casos de uso no serían una función sino una clase o un Factory Function, y no le pasariamos el fetcher si no que le inyectaríamos el repositorio para poder consumir la info
+   
 

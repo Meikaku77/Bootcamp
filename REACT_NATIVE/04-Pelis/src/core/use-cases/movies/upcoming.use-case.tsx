@@ -8,7 +8,7 @@ import { Movie } from "../../entities/movie.entity"
 export const moviesUpcomingUseCase= async(fetcher: HttpAdapter): Promise<Movie[]>=>{
     try {
         
-        const upcomingMovies  = await fetcher.get<MovieDBResponse>('/upcoming')
+        const upcomingMovies  = await fetcher.get<MovieDBResponse>('/3/movie/upcoming')
 
         return upcomingMovies.results.map(MovieMapper.fromMovieDBResultToEntity)
 

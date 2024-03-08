@@ -9,7 +9,7 @@ const useMovies = () => {
     const [nowPlaying, setNowPlaying] = useState<Movie[]>([])
     const [popularMovie, setpopularMovie] = useState<Movie[]>([])
     const [topRatedMovie, setTopRatedMovie] = useState<Movie[]>([])
-    const [upcomingMovie, setupcomimgMovie] = useState<Movie[]>([])
+    const [upcomingMovie, setUpcomingMovie] = useState<Movie[]>([])
 
     useEffect(()=>{
         initLoad()
@@ -32,7 +32,10 @@ const useMovies = () => {
         setNowPlaying(nowPlayingMovies)
         setpopularMovie(popularMovies)
         setTopRatedMovie(topRatedMovies)
-        setupcomimgMovie(upcomingMovies)
+        setUpcomingMovie(upcomingMovies)
+        setIsLoading(false)
+
+        console.log(nowPlayingMovies, popularMovies, topRatedMovies, upcomingMovies)
     }
     
     return {
