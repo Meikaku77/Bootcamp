@@ -1,13 +1,14 @@
 import { HttpAdapter } from "../../../config/adapters/http/http.adapter";
-import { PopularResults } from "../../../infraestructure/interfaces/popular.interface";
-import { PopularMapper } from "../../../infraestructure/mappers/popular.mapper";
-import { PopularEntity } from "../../entities/popular.entity";
+import { MovieDBResponse} from "../../../infraestructure/interfaces/movieDBResponses";
+import { MovieMapper } from "../../../infraestructure/mappers/movie.mapper";
+import { Movie } from "../../entities/movie.entity";
 
 
-export const PopularUseCase = async (fetcher: HttpAdapter): Promise<PopularEntity[]>=>{
 
-        const popularMoviesResult = await fetcher.get<PopularResults>('/3/tv/popular')
+export const PopularUseCase = async (fetcher: HttpAdapter): Promise<Movie[]>=>{
 
-    return   popularMoviesResult.results.map(PopularMapper.toPopularEntityFromresult)
+        const popularMoviesResult = await fetcher.get<MovieDBResponse>('/3/tv/popular')
+
+    return   popularMoviesResult.results.map(MovieMapper.fromMovieDBResultToEntity)
     
 }

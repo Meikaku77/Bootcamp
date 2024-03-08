@@ -640,6 +640,62 @@ export default useUpcoming
 - Por algún motivo no muestra el array de genreIds, solo muestra Array
 - Hago el resto de casos de uso
 - Para subirlo a git **he quitado la API_KEY hasta que no configure las variables de entorno**
+-----
+
+## REFACTORING
+
+- En lugar de usar un hook para cada caso de uso, usaremos el mimso useMovies y el Promise.all
+- Usaremos la misma entidad Movie para todos. 
+- Le pongo un nombre genérico a la interfaz para usarla en todos los casos de uso
+- Uso la misma entity en todos los casos y states
+- En useMovie hago carpintería 
+
+~~~js
+import React, { useEffect, useState } from 'react'
+import { Movie } from '../../core/entities/movie.entity'
+import * as UseCases from '../../core/use-cases'
+import { MovieDBFetcher } from '../../config/adapters/http/movieDB.adapter'
+
+const useMovies = () => {
+
+    const [isLoading, setIsLoading] = useState(true)
+    const [nowPlaying, setNowPlaying] = useState<Movie[]>([])
+    const [popularMovie, setpopularMovie] = useState<Movie[]>([])
+    const [topRatedMovie, setTopRatedMovie] = useState<Movie[]>([])
+    const [upcomingMovie, setupcomimgMovie] = useState<Movie[]>([])
+
+    useEffect(()=>{
+        initLoad()
+    },[])
+
+    const initLoad= async()=>{
+        const nowPlayingPromise = UseCases.moviesNowPlayingUseCase(MovieDBFetcher)
+        const popularPromise = UseCases.moviesNowPlayingUseCase(MovieDBFetcher)
+        const topRatedPromise = UseCases.moviesNowPlayingUseCase(MovieDBFetcher)
+        const upcomingPromise = UseCases.moviesNowPlayingUseCase(MovieDBFetcher)
+
+        const[
+            nowPlayingMovies,
+            popularMovies,
+            topRatedMovies,
+            upcomingMovies
+        ] = await Promise.all([nowPlayingPromise, popularPromise, topRatedPromise, upcomingPromise])
+        
+
+        setNowPlaying(nowPlayingMovies)
+        setpopularMovie(popularMovies)
+        setTopRatedMovie(topRatedMovies)
+        setupcomimgMovie(upcomingMovies)
+    }
+    
+    return {
+        isLoading,
+        nowPlaying
+    }
+}
+
+export default useMovies
+~~~
 
 
 

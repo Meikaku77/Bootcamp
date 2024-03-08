@@ -1,10 +1,12 @@
 import { HttpAdapter } from "../../../config/adapters/http/http.adapter";
-import { TopRatedResults } from "../../../infraestructure/interfaces/top-rated.interface";
-import { TopRatedMapper } from "../../../infraestructure/mappers/top-rated.mapper";
+import { MovieDBResponse} from "../../../infraestructure/interfaces/movieDBResponses";
+import { MovieMapper } from "../../../infraestructure/mappers/movie.mapper";
+import { Movie } from "../../entities/movie.entity";
 
-export const TopRatedUseCase = async (fetcher: HttpAdapter) : Promise<TopRatedEntity[]>=>{
 
-    const topRatedMovies = await fetcher.get<TopRatedResults>('3/tv/top_rated')
+export const TopRatedUseCase = async (fetcher: HttpAdapter) : Promise<Movie[]>=>{
 
-    return topRatedMovies.results.map(TopRatedMapper.toTopRatedEntityFromresult)
+    const topRatedMovies = await fetcher.get<MovieDBResponse>('3/tv/top_rated')
+
+    return topRatedMovies.results.map(MovieMapper.fromMovieDBResultToEntity)
 }

@@ -1,15 +1,16 @@
 import { HttpAdapter } from "../../../config/adapters/http/http.adapter"
-import { UpcomingResults } from "../../../infraestructure/interfaces/upcomingMovies.interface"
-import { UpcomingMovieMapper } from "../../../infraestructure/mappers/upcoming.mapper"
-import { UpcomingMovie } from "../../entities/upcoming.entity"
+import { MovieDBResponse} from "../../../infraestructure/interfaces/movieDBResponses"
+import { MovieMapper } from "../../../infraestructure/mappers/movie.mapper"
+import { Movie } from "../../entities/movie.entity"
 
 
-export const moviesUpcomingUseCase= async(fetcher: HttpAdapter): Promise<UpcomingMovie[] | undefined>=>{
+
+export const moviesUpcomingUseCase= async(fetcher: HttpAdapter): Promise<Movie[]>=>{
     try {
         
-        const upcomingMovies  = await fetcher.get<UpcomingResults>('/upcoming')
+        const upcomingMovies  = await fetcher.get<MovieDBResponse>('/upcoming')
 
-        return upcomingMovies.results.map(UpcomingMovieMapper.getUpcomingResultToEntity)
+        return upcomingMovies.results.map(MovieMapper.fromMovieDBResultToEntity)
 
 
         
