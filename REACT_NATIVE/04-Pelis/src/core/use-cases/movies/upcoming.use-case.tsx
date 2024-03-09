@@ -10,10 +10,7 @@ export const moviesUpcomingUseCase= async(fetcher: HttpAdapter): Promise<Movie[]
         
         const upcomingMovies  = await fetcher.get<MovieDBResponse>('/3/movie/upcoming')
 
-        return upcomingMovies.results.map(MovieMapper.fromMovieDBResultToEntity)
-
-
-        
+        return upcomingMovies.results.map(MovieMapper.fromMovieDBResultToEntity)      
         
     } catch (error) {
      throw new Error(`fetch error to upcoming movies use case`)   

@@ -3,12 +3,26 @@ import { MovieDBResponse} from "../../../infraestructure/interfaces/movieDBRespo
 import { MovieMapper } from "../../../infraestructure/mappers/movie.mapper";
 import { Movie } from "../../entities/movie.entity";
 
+interface Options{
+    page?: number
+    limit?: number
+}
 
 
-export const PopularUseCase = async (fetcher: HttpAdapter): Promise<Movie[]>=>{
+export const PopularUseCase = async (fetcher: HttpAdapter, options?: Options): Promise<Movie[]>=>{
 
-        const popularMoviesResult = await fetcher.get<MovieDBResponse>('/3/tv/popular')
-
-    return   popularMoviesResult.results.map(MovieMapper.fromMovieDBResultToEntity)
+    try {
+        
+        const popularMoviesResult = await fetcher.get<MovieDBResponse>('/3/tv/popular', {
+                params:{
+                    page: options?.page ?? 1
+                }
+            })
+    
+        return   popularMoviesResult.results.map(MovieMapper.fromMovieDBResultToEntity)
+        
+    } catch (error) {
+            throw new Error ('Cant get popular movies')     
+    }   
     
 }

@@ -10,11 +10,13 @@ interface Props{
 }
 
 const PosterCarousel = ({movies, height= 440}: Props) => {
+
   return (
     <View style={{height}} >
         <ScrollView
         horizontal
-        showsHorizontalScrollIndicator ={false}>
+        showsHorizontalScrollIndicator ={false}
+        >
             {movies.map(movie=> <Poster key={movie.id} movie={movie}  />)}
         </ScrollView>
     </View>

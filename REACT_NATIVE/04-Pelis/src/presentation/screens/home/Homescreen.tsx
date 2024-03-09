@@ -11,7 +11,7 @@ export const HomeScreen  = () => {
 
   const {top} = useSafeAreaInsets()
 
-const {isLoading, nowPlaying, popularMovie, topRatedMovie, upcomingMovie} = useMovies()
+const {isLoading, nowPlaying, popularMovie, topRatedMovie, upcomingMovie, popularNextPage} = useMovies()
 
 if(isLoading){
   return (<Text>Is loading...</Text>)
@@ -23,9 +23,9 @@ if(isLoading){
       <View style={{marginTop: top + 20, paddingBottom: 30}}>
 
       <PosterCarousel movies={nowPlaying} />
-      <HorizontalCarousel movies={popularMovie} title="Populars"/>
-      <HorizontalCarousel movies={topRatedMovie} title="Top Rated"/>
-      <HorizontalCarousel movies={upcomingMovie} title="Upcoming"/>
+      <HorizontalCarousel movies={popularMovie} title="Populars" loadNextPage={popularNextPage} />
+      <HorizontalCarousel movies={topRatedMovie} title="Top Rated" />
+      <HorizontalCarousel movies={upcomingMovie} title="Upcoming" />
       </View>
     </ScrollView>
   )
