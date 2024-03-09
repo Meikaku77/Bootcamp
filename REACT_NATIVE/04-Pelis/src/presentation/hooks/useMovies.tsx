@@ -35,7 +35,7 @@ const useMovies = () => {
         setUpcomingMovie(upcomingMovies)
         setIsLoading(false)
 
-        console.log(nowPlayingMovies, popularMovies, topRatedMovies, upcomingMovies)
+        
     }
     
     return {
