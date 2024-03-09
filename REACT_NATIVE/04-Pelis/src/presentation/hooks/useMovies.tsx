@@ -17,9 +17,9 @@ const useMovies = () => {
 
     const initLoad= async()=>{
         const nowPlayingPromise = UseCases.moviesNowPlayingUseCase(MovieDBFetcher)
-        const popularPromise = UseCases.moviesNowPlayingUseCase(MovieDBFetcher)
-        const topRatedPromise = UseCases.moviesNowPlayingUseCase(MovieDBFetcher)
-        const upcomingPromise = UseCases.moviesNowPlayingUseCase(MovieDBFetcher)
+        const popularPromise = UseCases.PopularUseCase(MovieDBFetcher)
+        const topRatedPromise = UseCases.TopRatedUseCase(MovieDBFetcher)
+        const upcomingPromise = UseCases.moviesUpcomingUseCase(MovieDBFetcher)
 
         const[
             nowPlayingMovies,

@@ -240,9 +240,9 @@ const Poster = ({movie, height=420, width=300}: Props) => {
     style={({pressed})=>({
         width,
         height,
-        marginHorizontal:10,
+        marginHorizontal:4,
         paddingBottom: 20,
-        paddingHorizontal:7,
+        paddingHorizontal:5,
         opacity: pressed? 0.9: 1
     })} 
     >
@@ -282,5 +282,89 @@ export default Poster
 -----
 
 ## Carrousel de películas con FlatList
+
+- Vamos a reutilizar mucho nuestro código
+- Quiero mostrar en HomeScreen las péliculas populares
+- Extraigo popularMovies del hook useMovies
+- Creo components/HorizontalCarousel.tsx
+- En un FlatList siempre le paso la data (que es un arreglo de movies), el renderItem (de la que desestructuro item y con un return implicito poniendo paréntesis renderizo el componente Poster), y también debo pasarle el keyExtractor, que siempre debe ser un string
+- Quito el width y height que había colocado en duro en el container de la imagen de Poster, ya que se lo paso por props
+
+~~~js
+import React from 'react'
+import { Text, View } from 'react-native'
+import { Movie } from '../../../core/entities/movie.entity'
+import { FlatList } from 'react-native-gesture-handler'
+import Poster from './Poster'
+
+interface Props{
+    movies: Movie[]
+    title?: string
+}
+
+export const HorizontalCarousel  = ({movies, title}: Props) => {
+  return (
+    <View style={{height: title? 260: 220}} >
+      {
+        title && (
+            <Text style={{fontSize: 30, fontWeight: '400', marginLeft: 10, marginBottom: 10}} >
+                {title}
+            </Text>
+        )
+      }
+
+      <FlatList 
+      data={movies}
+      renderItem={({item})=>(<Poster movie={item} width={140} height={200} />)}
+      keyExtractor={item=> item.id.toString()}
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      />
+    </View>
+  )
+}
+~~~
+
+- Uso el mismo componente para las top-rated y las upcoming
+
+~~~js
+import React from 'react'
+import { Text, View } from 'react-native'
+import useMovies from '../../hooks/useMovies'
+import { ScrollView } from 'react-native-gesture-handler'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import PosterCarousel from '../../components/movies/PosterCarousel'
+import { HorizontalCarousel } from '../../components/movies/HorizontalCarousel'
+
+
+export const HomeScreen  = () => {
+
+  const {top} = useSafeAreaInsets()
+
+const {isLoading, nowPlaying, popularMovie, topRatedMovie, upcomingMovie} = useMovies()
+
+if(isLoading){
+  return (<Text>Is loading...</Text>)
+}
+
+  
+  return (
+    <ScrollView>
+      <View style={{marginTop: top + 20, paddingBottom: 30}}>
+
+      <PosterCarousel movies={nowPlaying} />
+      <HorizontalCarousel movies={popularMovie} title="Populars"/>
+      <HorizontalCarousel movies={topRatedMovie} title="Top Rated"/>
+      <HorizontalCarousel movies={upcomingMovie} title="Upcoming"/>
+      </View>
+    </ScrollView>
+  )
+}
+~~~
+
+- Enfoquémonos en customizar el infiniteScroll
+------
+
+## Infinite Scroll Horizontal
 
 - 
