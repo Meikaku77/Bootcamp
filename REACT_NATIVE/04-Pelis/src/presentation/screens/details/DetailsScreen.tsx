@@ -3,6 +3,7 @@ import React from 'react'
 import { Text, View } from 'react-native'
 import { RootStackParams } from '../../navigation/Navigation'
 import useMovie from '../../hooks/useMovie'
+import { MovieHeader } from '../../components/movies/movie/MovieHeader'
 
 interface Props extends StackScreenProps<RootStackParams, 'Details'>{}
 
@@ -10,11 +11,17 @@ export const Detailsscreen  = ({route}:Props) => {
 
   const {movieId} = route.params
 
-  const{fullMovie} = useMovie(movieId)
+  const{isLoading, movie} = useMovie(movieId)
 
+  console.log(movie)
+
+  if(isLoading) {
+    return <Text>Loading</Text>
+  }
   return (
     <View>
-      <Text>{fullMovie?.title}</Text>
+
+      <MovieHeader movie={movie!} />
     </View>
   )
 }

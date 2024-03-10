@@ -1,28 +1,28 @@
 import React, { useEffect, useState } from 'react'
 import * as UseCase from '../../core/use-cases'
 import { FullMovie } from '../../core/entities/movie.entity'
-import { fullMovieAdapter } from '../../config/adapters/http/fullMovie.adapter'
+import { MovieDBFetcher } from '../../config/adapters/http/movieDB.adapter'
 
 const useMovie = (movieId: number) => {
   const [isLoading, setIsLoading] = useState(true)
-  const [fullMovie, setFullMovie] = useState<FullMovie>()
+  const [movie, setMovie] = useState<FullMovie>()
 
   useEffect(()=>{
     loadMovie()
-  
 },[movieId])
 
   const loadMovie = async()=>{
     setIsLoading(true)
 
-    const fullMovieResult = await UseCase.getMovieUseCase(fullMovieAdapter, movieId)
-    setFullMovie(fullMovieResult)
-    setIsLoading(false)
+      const fullMovie = await UseCase.getMovieUseCase(MovieDBFetcher, movieId)
+      setMovie(fullMovie)
+      setIsLoading(false)
+    
   }
   
     return {
       isLoading,
-      fullMovie
+      movie
     }
 }
 
