@@ -1,13 +1,15 @@
 import React from 'react'
-import { Text, View } from 'react-native'
-import { FullMovie } from '../../../../core/entities/movie.entity'
+import { FlatList, Text, View } from 'react-native'
+import { Cast, FullMovie } from '../../../../core/entities/movie.entity'
 import { Formatter } from '../../../../config/helpers/formatter'
+import { CastActors } from '../../actors/CastActors'
 
 interface Props{
     movie: FullMovie
+    actors: Cast[]
 }
 
-export const MovieDetails= ({movie}: Props) => {
+export const MovieDetails= ({movie, actors}: Props) => {
   return (
     <>
     <View style={{marginHorizontal: 20}}>
@@ -32,8 +34,18 @@ export const MovieDetails= ({movie}: Props) => {
 
     <View>
         <Text style={{fontSize: 23, marginVertical: 10, fontWeight: 'bold', marginHorizontal: 20}} >
-            Actores
+           Actores
         </Text>
+
+        <FlatList 
+        data={actors}
+        keyExtractor={(item)=>item.id.toString()}
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        renderItem={({item})=><CastActors actor={item}  />}
+        />
+
+        
     </View>
     </>
   )

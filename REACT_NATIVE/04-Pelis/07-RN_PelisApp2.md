@@ -1465,4 +1465,364 @@ export const MovieDetails= ({movie}: Props) => {
 
 ## Estructura de datos para los actores
 
-- 
+- Nuevo caso de uso get-cast
+- Para obtener el casting de actores y actrices debo añadir credits después del id, antes del api_key
+- Obtenemos el cast y el crew, nos interesa el cast
+- Hago el mismo proceso: saco la interfaz, creo la entity, el método en el mapper, el caso de uso, lo llamo en el hook
+- Interfaz
+
+~~~js
+export interface MovieDBCastResponse {
+    id:   number;
+    cast: MovieDBCast[];
+    crew: MovieDBCast[];
+}
+
+export interface MovieDBCast {
+    adult:                boolean;
+    gender:               number;
+    id:                   number;
+    known_for_department: string;
+    name:                 string;
+    original_name:        string;
+    popularity:           number;
+    profile_path:         null | string;
+    cast_id?:             number;
+    character?:           string;
+    credit_id:            string;
+    order?:               number;
+    department?:          string;
+    job?:                 string;
+}
+~~~
+
+- La entidad
+
+~~~js
+export interface Cast{
+    id: number
+    name: string
+    character: string
+    avatar: string
+}
+~~~
+
+- Creo un mapper para el cast
+
+~~~js
+import { Cast } from "../../core/entities/movie.entity";
+import { MovieDBCast} from "../interfaces/full-movie.interface";
+
+export class CastMapper {
+    public static fromMovieDBToEntity(result: MovieDBCast): Cast{
+        
+            return{
+                id: result.id,
+                name: result.name,
+                character: result.character ?? 'No character',
+                avatar: result.profile_path 
+                ? `https://image.tmdb.org/t/p/w500${result.profile_path}`
+                : 'https://i.stack.imgur.com/l60Hf.png'
+            }
+        
+    }
+}
+~~~
+
+- En el caso de uso
+
+~~~js
+import { HttpAdapter } from "../../../config/adapters/http/http.adapter";
+import { MovieDBCastResponse } from "../../../infraestructure/interfaces/full-movie.interface";
+import { CastMapper } from "../../../infraestructure/mappers/cast.mapper";
+import { Cast } from "../../entities/movie.entity";
+
+export const getMovieCastUseCase = async (fetcher: HttpAdapter, movieId: number): Promise<Cast[]>=>{
+    try {
+        const {cast} = await fetcher.get<MovieDBCastResponse>(`/3/movie/${movieId}/credits`)
+
+        const actors = cast.map((actor)=> CastMapper.fromMovieDBToEntity(actor))
+        return actors
+
+    } catch (error) {
+        throw new Error('Can´t get movie cast')
+    }
+}
+~~~
+
+- Voy al hook
+
+~~~js
+import React, { useEffect, useState } from 'react'
+import * as UseCase from '../../core/use-cases'
+import { Cast, FullMovie } from '../../core/entities/movie.entity'
+import { MovieDBFetcher } from '../../config/adapters/http/movieDB.adapter'
+
+const useMovie = (movieId: number) => {
+  const [isLoading, setIsLoading] = useState(true)
+  const [movie, setMovie] = useState<FullMovie>()
+  const [cast, setCast] = useState<Cast[]>()
+
+  useEffect(()=>{
+    loadMovie()
+},[movieId])
+
+  const loadMovie = async()=>{
+    setIsLoading(true)
+
+      const fullMoviePromise = UseCase.getMovieUseCase(MovieDBFetcher, movieId)
+      const movieCastPromise = UseCase.getMovieCastUseCase(MovieDBFetcher, movieId)
+
+      const [fullMovie, movieCast] = await Promise.all([fullMoviePromise, movieCastPromise])
+
+      setMovie(fullMovie)
+      setCast(movieCast)
+      setIsLoading(false)
+
+      console.log(cast)
+    
+  }
+  
+    return {
+      isLoading,
+      movie,
+      cast
+    }
+}
+
+export default useMovie
+~~~
+
+- Lo desestructuro del hook en DetailsScreen y se lo paso a MovieDetails
+
+~~~js
+import React from 'react'
+import { Text, View } from 'react-native'
+import { Cast, FullMovie } from '../../../../core/entities/movie.entity'
+import { Formatter } from '../../../../config/helpers/formatter'
+
+interface Props{
+    movie: FullMovie
+    actors: Cast[]
+}
+
+export const MovieDetails= ({movie, actors}: Props) => {
+  return (
+    <>
+    <View style={{marginHorizontal: 20}}>
+      <View style={{flexDirection: 'row'}}>
+            <Text>{movie.rating}</Text>
+            <Text style={{marginLeft: 5}}>
+                - {movie.genres.join(', ')}    
+             </Text>
+
+      </View>
+    </View>
+
+    <Text style={{fontSize: 23, marginTop:10, marginBottom: 5, fontWeight:'bold', marginHorizontal: 10}} >
+        Historia
+    </Text>
+    <Text style={{fontSize: 16, marginBottom: 20, marginHorizontal: 10}}>{movie.description}</Text>
+
+    <Text style={{fontSize: 23, marginTop: 10, fontWeight:'bold', marginHorizontal: 10}} >
+        Presupuesto
+    </Text>
+    <Text style={{fontSize: 16, marginBottom: 35, marginHorizontal: 10}}>{Formatter.currency(movie.budget)}</Text>
+
+    <View>
+        <Text style={{fontSize: 23, marginVertical: 10, fontWeight: 'bold', marginHorizontal: 20}} >
+            {actors.map(actor=> <Text key={actor.id}>{actor.name}</Text>)}
+        </Text>
+    </View>
+    </>
+  )
+}
+~~~
+
+----
+
+## Mostrar actores en pantalla
+
+- Usemos un FlatList en MovieDetails
+
+~~~js
+    <FlatList 
+        data={actors}
+        keyExtractor={(item)=>item.id.toString()}
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        renderItem={({item})=><Text>{item.name}</Text>}
+        />
+~~~
+
+- En lugar de renderizar el texto, me creo un componente en components/actors/CastActor.tsx
+
+~~~js
+import React from 'react'
+import { Image, Text, View } from 'react-native'
+import { Cast } from '../../../core/entities/movie.entity'
+
+interface Props{
+    actor: Cast
+}
+
+export const CastActors = ({actor}: Props) => {
+  return (
+    <View style={styles.container} >
+      <Image source={{uri: actor.avatar}} style={{width:100, height: 100, borderRadius: 10}} />
+
+      <View style={styles.actorInfo}>
+        <Text style={{fontSize: 15, fontWeight: 'bold'}} >
+            {actor.name}
+        </Text>
+        <Text style={{fontSize: 12, opacity: 0.7}} >
+            {actor.character}
+        </Text>
+
+      </View>
+    </View>
+  )
+}
+
+
+
+import {StyleSheet} from 'react-native'
+
+const styles = StyleSheet.create({
+  container:{
+    marginRight:10,
+    paddingLeft: 10,
+    display: 'flex',
+    flexDirection: 'column',
+    width: 100
+  },
+  actorInfo:{
+    marginLeft: 10,
+    marginTop: 4
+  }
+})
+~~~
+
+- Lo uso en MovieDetails
+
+~~~js
+import React from 'react'
+import { FlatList, Text, View } from 'react-native'
+import { Cast, FullMovie } from '../../../../core/entities/movie.entity'
+import { Formatter } from '../../../../config/helpers/formatter'
+import { CastActors } from '../../actors/CastActors'
+
+interface Props{
+    movie: FullMovie
+    actors: Cast[]
+}
+
+export const MovieDetails= ({movie, actors}: Props) => {
+  return (
+    <>
+    <View style={{marginHorizontal: 20}}>
+      <View style={{flexDirection: 'row'}}>
+            <Text>{movie.rating}</Text>
+            <Text style={{marginLeft: 5}}>
+                - {movie.genres.join(', ')}    
+             </Text>
+
+      </View>
+    </View>
+
+    <Text style={{fontSize: 23, marginTop:10, marginBottom: 5, fontWeight:'bold', marginHorizontal: 10}} >
+        Historia
+    </Text>
+    <Text style={{fontSize: 16, marginBottom: 20, marginHorizontal: 10}}>{movie.description}</Text>
+
+    <Text style={{fontSize: 23, marginTop: 10, fontWeight:'bold', marginHorizontal: 10}} >
+        Presupuesto
+    </Text>
+    <Text style={{fontSize: 16, marginBottom: 35, marginHorizontal: 10}}>{Formatter.currency(movie.budget)}</Text>
+
+    <View>
+        <Text style={{fontSize: 23, marginVertical: 10, fontWeight: 'bold', marginHorizontal: 20}} >
+           Actores
+        </Text>
+
+        <FlatList 
+        data={actors}
+        keyExtractor={(item)=>item.id.toString()}
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        renderItem={({item})=><CastActors actor={item}  />}
+        />       
+    </View>
+    </>
+  )
+}
+~~~
+-----
+
+## Configurar variables de entorno
+
+- Usaremos react-native-dotenv
+
+> npm i -D react-native-dotenv
+
+- En .babelrc o babel.config
+```
+{
+  "plugins": [
+    ["module: react-native-dotenv"]
+  ] 
+}
+```
+
+- Quedando así
+- **NOTA**: si usas un plugin de reanimated asegurate de quea el último
+
+~~~js
+module.exports = {
+  presets: ['module:@react-native/babel-preset'],
+  plugins: ['module: react-native-dotenv']
+};
+~~~
+
+- Se puede configurar
+
+~~~js
+module.exports = {
+  presets: ['module:@react-native/babel-preset'],
+  plugins: [
+    ['module:react-native-dotenv',{
+    envName: 'APP_ENV',
+    moduleName: '@env',
+    path: ".env"
+  }]
+]
+};
+~~~
+
+- En Typescript hay que crear una carpeta llamada Types y ahi definir un módulo
+- En la raíz types/env.d.ts  (.d son los archivos de definicion de TypeScript)
+- Uso el nombre del módulo que especifiqué en babel.config
+
+~~~js
+declare module '@env'{
+    export const API_KEY: string
+}
+~~~
+
+- Ahora para usarlo en el adaptador
+
+~~~js
+import { API_KEY } from "@env";
+import { AxiosAdapter } from "./axios.adapter";
+
+export const fullMovieAdapter = new AxiosAdapter({
+    baseURL: "https://api.themoviedb.org/3/movie",
+    params: {
+        api_key: API_KEY ?? 'no key',
+        language: 'es'
+    }
+})
+~~~
+
+- Este paquete a veces DA PROBLEMAS. Prueba a reiniciar la computadora (aunque parezca inverosímil)
+

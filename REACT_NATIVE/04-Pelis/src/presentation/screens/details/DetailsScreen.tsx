@@ -13,7 +13,7 @@ export const Detailsscreen  = ({route}:Props) => {
 
   const {movieId} = route.params
 
-  const{isLoading, movie} = useMovie(movieId)
+  const{isLoading, movie, cast} = useMovie(movieId)
 
 
   if(isLoading) {
@@ -22,7 +22,7 @@ export const Detailsscreen  = ({route}:Props) => {
   return (
     <ScrollView>
       <MovieHeader title={movie!.title} originalTitle={movie!.title} poster={movie!.poster} />
-      <MovieDetails movie={movie!} />
+      <MovieDetails movie={movie!} actors={cast!} />
     </ScrollView>
   )
 }
