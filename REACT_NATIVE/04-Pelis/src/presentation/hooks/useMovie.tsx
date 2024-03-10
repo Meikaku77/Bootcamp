@@ -15,6 +15,7 @@ const useMovie = (movieId: number) => {
     setIsLoading(true)
 
       const fullMovie = await UseCase.getMovieUseCase(MovieDBFetcher, movieId)
+
       setMovie(fullMovie)
       setIsLoading(false)
     

@@ -13,7 +13,7 @@ export const PopularUseCase = async (fetcher: HttpAdapter, options?: Options): P
 
     try {
         
-        const popularMoviesResult = await fetcher.get<MovieDBResponse>('/3/tv/popular', {
+        const popularMoviesResult = await fetcher.get<MovieDBResponse>('/3/movie/popular', {
                 params:{
                     page: options?.page ?? 1
                 }

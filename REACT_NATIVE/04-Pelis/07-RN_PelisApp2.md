@@ -1282,4 +1282,187 @@ export const Detailsscreen  = ({route}:Props) => {
   )
 }
 ~~~
---
+
+- Sería una buena práctica pasarle por props una movie con solo lo que necesito: poster_image y pocas cosas más
+
+~~~js
+interface Props{
+    poster: string
+    originalTitle: string
+    title: string
+}
+
+export const MovieHeader  = ({poster, originalTitle, title}: Props) => {
+
+
+    const {height: screenHeight}= useWindowDimensions()
+    const navigation = useNavigation()
+
+{...}
+~~~
+
+- Ahora en DetailsScreen le paso las props necesarias
+- salto el error de TypeScript de que movie sea undefined chequeando el isLoading, movie siempre estará. Lo indico con !
+~~~js
+import { StackScreenProps } from '@react-navigation/stack'
+import React from 'react'
+import { Text, View } from 'react-native'
+import { RootStackParams } from '../../navigation/Navigation'
+import useMovie from '../../hooks/useMovie'
+import { MovieHeader } from '../../components/movies/movie/MovieHeader'
+
+interface Props extends StackScreenProps<RootStackParams, 'Details'>{}
+
+export const Detailsscreen  = ({route}:Props) => {
+
+  const {movieId} = route.params
+
+  const{isLoading, movie} = useMovie(movieId)
+
+
+  if(isLoading) {
+    return <Text>Loading</Text>
+  }
+  return (
+    <View>
+      <MovieHeader title={movie!.title} originalTitle={movie!.title} poster={movie!.poster} />
+    </View>
+  )
+}
+~~~
+---
+
+## Detalles de la película
+
+- Creo en movie/MovieDetails.tsx
+- Mostramos el rating.
+- Cómo ya se ha hecho un map de los generos, puedo hacer un join para unirlos con una coma
+
+~~~js
+import React from 'react'
+import { Text, View } from 'react-native'
+import { FullMovie } from '../../../../core/entities/movie.entity'
+
+interface Props{
+    movie: FullMovie
+}
+
+export const MovieDetails= ({movie}: Props) => {
+  return (
+    <>
+    <View style={{marginHorizontal: 20}}>
+      <View style={{flexDirection: 'row'}}>
+            <Text>{movie.rating}</Text>
+            <Text style={{marginLeft: 5}}>
+                - {movie.genres.join(', ')}    
+             </Text>
+
+      </View>
+    </View>
+
+    <Text style={{fontSize: 23, marginTop:10, fontWeight:'bold'}} >
+        Historia
+    </Text>
+
+    <Text style={{fontSize: 16}}>{movie.description}</Text>
+
+    </>
+  )
+}
+~~~
+
+- Coloco un ScrollView para poder hacer scroll
+
+~~~js
+import { StackScreenProps } from '@react-navigation/stack'
+import React from 'react'
+import { Text, ScrollView } from 'react-native'
+import { RootStackParams } from '../../navigation/Navigation'
+import useMovie from '../../hooks/useMovie'
+import { MovieHeader } from '../../components/movies/movie/MovieHeader'
+import { MovieDetails } from '../../components/movies/movie/MovieDetails'
+
+
+interface Props extends StackScreenProps<RootStackParams, 'Details'>{}
+
+export const Detailsscreen  = ({route}:Props) => {
+
+  const {movieId} = route.params
+
+  const{isLoading, movie} = useMovie(movieId)
+
+
+  if(isLoading) {
+    return <Text>Loading</Text>
+  }
+  return (
+    <ScrollView>
+      <MovieHeader title={movie!.title} originalTitle={movie!.title} poster={movie!.poster} />
+      <MovieDetails movie={movie!} />
+    </ScrollView>
+  )
+}
+~~~
+
+- Sigo con los detalles en MovieDetails
+- Muestro la descripción
+- Para mostrar el presupuesto voy a formatear la cifra con un helper
+
+
+~~~js
+export class Formatter{
+    public static currency(value: number): string | string[] | undefined {
+
+        return new Intl.NumberFormat('en-US',{
+            style: 'currency',
+            currency: 'USD'
+        }).format(value)
+    }
+}
+~~~
+
+- Lo aplico al presupuesto
+
+~~~js
+import React from 'react'
+import { Text, View } from 'react-native'
+import { FullMovie } from '../../../../core/entities/movie.entity'
+import { Formatter } from '../../../../config/helpers/formatter'
+
+interface Props{
+    movie: FullMovie
+}
+
+export const MovieDetails= ({movie}: Props) => {
+  return (
+    <>
+    <View style={{marginHorizontal: 20}}>
+      <View style={{flexDirection: 'row'}}>
+            <Text>{movie.rating}</Text>
+            <Text style={{marginLeft: 5}}>
+                - {movie.genres.join(', ')}    
+             </Text>
+
+      </View>
+    </View>
+
+    <Text style={{fontSize: 23, marginTop:10, marginBottom: 5, fontWeight:'bold'}} >
+        Historia
+    </Text>
+    <Text style={{fontSize: 16, marginBottom: 20}}>{movie.description}</Text>
+
+    <Text style={{fontSize: 23, marginTop: 10, fontWeight:'bold'}} >
+        Presupuesto
+    </Text>
+    <Text style={{fontSize: 16, marginBottom: 35}}>{Formatter.currency(movie.budget)}</Text>
+    </>
+  )
+}
+~~~
+
+- Ahora quiero colocar los actores
+-------
+
+## Estructura de datos para los actores
+
+- 

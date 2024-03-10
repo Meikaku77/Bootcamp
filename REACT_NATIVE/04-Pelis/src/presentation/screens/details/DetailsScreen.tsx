@@ -1,9 +1,11 @@
 import { StackScreenProps } from '@react-navigation/stack'
 import React from 'react'
-import { Text, View } from 'react-native'
+import { Text, ScrollView } from 'react-native'
 import { RootStackParams } from '../../navigation/Navigation'
 import useMovie from '../../hooks/useMovie'
 import { MovieHeader } from '../../components/movies/movie/MovieHeader'
+import { MovieDetails } from '../../components/movies/movie/MovieDetails'
+
 
 interface Props extends StackScreenProps<RootStackParams, 'Details'>{}
 
@@ -13,15 +15,14 @@ export const Detailsscreen  = ({route}:Props) => {
 
   const{isLoading, movie} = useMovie(movieId)
 
-  console.log(movie)
 
   if(isLoading) {
     return <Text>Loading</Text>
   }
   return (
-    <View>
-
-      <MovieHeader movie={movie!} />
-    </View>
+    <ScrollView>
+      <MovieHeader title={movie!.title} originalTitle={movie!.title} poster={movie!.poster} />
+      <MovieDetails movie={movie!} />
+    </ScrollView>
   )
 }
