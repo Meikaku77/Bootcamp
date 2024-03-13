@@ -1308,4 +1308,260 @@ export const SwitchScreen = () => {
 
 ## Componente Separador
 
+- Creo components/ui/Separator.tsx
+
+~~~js
+import React from 'react'
+import { StyleProp, Text, View, ViewStyle } from 'react-native'
+import { colors, globalStyles } from '../../../config/theme/theme'
+
+interface Props{
+    style?: StyleProp<ViewStyle>
+}
+
+export const Separator = ({style}: Props) => {
+
+  return (
+    <View style={[
+        {
+            alignSelf: 'center',
+            width: '80%',
+            height: 1,
+            backgroundColor: colors.text,
+            opacity: 0.1,
+            marginVertical: 8
+        },
+        style
+    ]}>
+      <Text>Separator</Text>
+    </View>
+  )
+}
+~~~
+
+- Coloco uno entre cada switch
+
+~~~js
+return (
+    <CustomView style={{marginTop: 10, paddingHorizontal: 10}} >
+        <Card>
+          <CustomSwitch isOn={state.isActive} 
+          onChange={(value)=> setState({...state, isActive: value})} 
+          text="Active" />
+          <Separator />
+          <CustomSwitch isOn={state.isHungry} 
+          onChange={(value)=> setState({...state, isHungry: value})} 
+          text="Humgry" />
+          <Separator />
+          <CustomSwitch isOn={state.isHappy} 
+          onChange={(value)=> setState({...state, isHappy: value})} 
+          text="Happy" />
+        </Card>
+    </CustomView> 
+  )
+~~~
+
+- Coloquémonos enmedio de los items en HomeScreen
+- En MenuItem coloco el return en un Fragment para colocar el Separator después del Pressable
+- Pregunto si es el último para no colocarlo después
+
+~~~js
+    <>
+        <Pressable
+        onPress={()=>navigation.navigate(component)}
+        >
+            <View style={{
+                ...styles.container,
+                backgroundColor: colors.cardBackground,
+                ...(isFirst && {borderTopLeftRadius: 10, borderTopRightRadius: 10, paddingTop: 10}),
+                ...(isLast && {borderBottomLeftRadius: 10, borderBottomRightRadius: 10, paddingTop: 10})
+            }}>
+                <Icon name={icon} size={25} style={{marginRight:10, color: colors.primary}} />
+                <Text style={{color: colors.text}}>{name}</Text>
+                <Icon name='chevron-forward-outline' size={25} style={{marginLeft: 'auto'}} color={colors.primary}/>
+
+            </View>
+        </Pressable>
+            
+            {!isLast && <Separator />}
+    </>
+~~~
+
+- de esta manera no queda muy bien la presentación en el Home, refactorizo el separador, meto el view en otro view y le añado el backgroundColor de la card
+
+~~~js
+import React from 'react'
+import { StyleProp, Text, View, ViewStyle } from 'react-native'
+import { colors, globalStyles } from '../../../config/theme/theme'
+
+interface Props{
+    style?: StyleProp<ViewStyle>
+}
+
+export const Separator = ({style}: Props) => {
+
+  return (
+    <View style={{backgroundColor: colors.cardBackground}} >
+        <View style={[
+            {
+                alignSelf: 'center',
+                width: '80%',
+                height: 1,
+                backgroundColor: colors.text,
+                opacity: 0.1,
+                marginVertical: 8
+            },
+            style
+        ]}>
+  
+        </View>
+
+    </View>
+  )
+}
+~~~
+----------
+
+## Component Alert
+
+- Creo AlertScreen y lo coloco en el StackNavigator con ese nombre, igual que en el arreglo de MenuItems
+- Copio la documentación dentro de mi CustomView
+- Creo el cascarón con los botones (mi CustomButton)
+- Coloco un View con un high para poner distancia entre ellos
+
+~~~js
+import React from 'react'
+import { Text, View } from 'react-native'
+import { CustomView } from '../../components/ui/CustomView'
+import { Title } from '../../components/ui/Title'
+import { globalStyles } from '../../../config/theme/theme'
+import { Button } from '../../components/ui/Button'
+
+export const AlertScreen = () => {
+  return (
+    <CustomView style={globalStyles.globalMargin}>
+      <Title safe text="Alertas" />
+
+      <Button text="Alerta - 2 botones" onPress={()=>{}} />
+
+      <View style={{height: 10}} />
+
+      <Button text="Alerta - 3 botones" onPress={()=>{}} />
+      
+      <View style={{height: 10}} />
+
+      <Button text="Prompt - Input" onPress={()=>{}} />
+    </CustomView>
+  )
+}
+~~~
+
+- Copio las funciones de la documentación y las coloco en el cuerpo del Functional Component
+- Las uso en el onPress
+
+~~~js
+import React from 'react'
+import { Alert, Text, View } from 'react-native'
+import { CustomView } from '../../components/ui/CustomView'
+import { Title } from '../../components/ui/Title'
+import { globalStyles } from '../../../config/theme/theme'
+import { Button } from '../../components/ui/Button'
+
+export const AlertScreen = () => {
+    const createTwoButtonAlert = () =>
+    Alert.alert('Alert Title', 'My Alert Msg', [
+      {
+        text: 'Cancel',
+        onPress: () => console.log('Cancel Pressed'),
+        style: 'cancel',
+      },
+      {text: 'OK', onPress: () => console.log('OK Pressed')},
+    ]);
+
+  const createThreeButtonAlert = () =>
+    Alert.alert('Alert Title', 'My Alert Msg', [
+      {
+        text: 'Ask me later',
+        onPress: () => console.log('Ask me later pressed'),
+      },
+      {
+        text: 'Cancel',
+        onPress: () => console.log('Cancel Pressed'),
+        style: 'cancel',
+      },
+      {text: 'OK', onPress: () => console.log('OK Pressed')},
+    ]);
+
+  return (
+    <CustomView style={globalStyles.globalMargin}>
+      <Title safe text="Alertas" />
+
+      <Button text="Alerta - 2 botones" onPress={createTwoButtonAlert} />
+
+      <View style={{height: 10}} />
+
+      <Button text="Alerta - 3 botones" onPress={createThreeButtonAlert} />
+      
+      <View style={{height: 10}} />
+
+      <Button text="Prompt - Input" onPress={()=>{}} />
+    </CustomView>
+  )
+}
+~~~
+
+- Las alertas se ven en plan Material 2
+- No hay mucha personalización estética
+- En el onPress de la Alert puedo disparar una acción
+- Algunas de las opciones de configuración que colocaría en un segundo objeto funcionan en android y no en ios y al revés
+
+~~~js
+const createTwoButtonAlert = () =>
+Alert.alert('Alert Title', 'My Alert Msg', [
+  {
+    text: 'Cancel',
+    onPress: () => console.log('Cancel Pressed'),
+    style: 'cancel',
+  },
+  {text: 'OK', onPress: () => console.log('OK Pressed')},
+  
+],
+{cancelable: true,
+onDismiss(){
+    console.log('onDismiss')
+}}
+);
+~~~
+----
+
+## Component Alert Prompt
+
+~~~js
+const showPrompt = () =>{
+    Alert.prompt('¿Cual es tu correo electrónico?','Texto blablablabla',
+    (value: string)=> console.log({value})
+    )
+}
+~~~
+
+- Uso el showPrompt en el onPress
+- En Android no funciona (en ios si)
+- En ios puedo hacer que el input aparezca encriptado, añadirle un valor por defecto, y que saque el teclado numérico de esta manera
+
+~~~js
+const showPrompt = () =>{
+    Alert.prompt(
+        '¿Cual es tu correo electrónico?',
+        'Texto blablablabla',
+        (value: string)=> console.log({value}),
+        'secure-text',
+        'Soy el valor por defecto',
+        'number-pad'
+    )
+}
+~~~
+----
+
+## Prompt ios y Android
+
 - 

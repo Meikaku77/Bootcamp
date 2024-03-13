@@ -4,6 +4,7 @@ import {StyleSheet} from 'react-native'
 import { colors } from '../../../config/theme/theme'
 import  Icon  from 'react-native-vector-icons/Ionicons'
 import { useNavigation } from '@react-navigation/native'
+import { Separator } from './Separator'
 
 interface Props{
     name: string
@@ -18,6 +19,7 @@ export const MenuItem = ({name, icon, component, isFirst= false, isLast= false }
     const navigation = useNavigation<any>()
 
   return (
+    <>
         <Pressable
         onPress={()=>navigation.navigate(component)}
         >
@@ -33,6 +35,9 @@ export const MenuItem = ({name, icon, component, isFirst= false, isLast= false }
 
             </View>
         </Pressable>
+            
+            {!isLast && <Separator />}
+    </>
   )
 }
 
