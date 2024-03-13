@@ -1164,5 +1164,148 @@ export const SwitchScreen = () => {
 
 ## Componente Switch
 
-- 
+- Copio el código de la documentación, con los states incluidos
 
+~~~js
+import React, { useState } from 'react'
+import { Switch, Text} from 'react-native'
+import { CustomView } from '../../components/ui/CustomView'
+import { Card } from '../../components/ui/Card'
+
+
+export const SwitchScreen = () => {
+  const [isEnabled, setIsEnabled] = useState(false);
+  const toggleSwitch = () => setIsEnabled(previousState => !previousState)
+  return (
+    <CustomView style={{marginTop: 10, paddingHorizontal: 10}} >
+        <Card>
+        <Switch
+        trackColor={{false: '#767577', true: '#81b0ff'}}
+        thumbColor={isEnabled ? '#f5dd4b' : '#f4f3f4'}
+        ios_backgroundColor="#3e3e3e"
+        onValueChange={toggleSwitch}
+        value={isEnabled}
+      />
+        </Card>
+    </CustomView>   
+  )
+}
+~~~
+
+- En ios aparece a la izquierda, no como en Android
+- Luego lo arreglaremos
+- Este switch no está aplicando el tema de material 3. Después usaremos un componente especializado.
+- Creo un custom switch
+
+~~~js
+import React from 'react'
+import { Switch } from 'react-native-gesture-handler'
+import { Platform, Text, View } from 'react-native'
+
+interface Props{
+    isOn: boolean
+    text?: string
+    onChange: (value: boolean) => void
+}
+
+
+export const CustomSwitch = ({isOn, text, onChange}: Props) => {
+  return (
+    <View style={styles.switchRow}>
+        {
+            text && <Text style={{color: colors.text}}>{text}</Text>
+        }
+      
+        <Switch
+            thumbColor={Platform.OS === 'android'? colors.primary: ""}
+            ios_backgroundColor="#3e3e3e"
+            onValueChange={onChange}
+            value={isOn}
+            />
+    </View>
+  )
+}
+
+
+import {StyleSheet} from 'react-native'
+import { colors } from '../../../config/theme/theme'
+
+const styles = StyleSheet.create({
+    switchRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginVertical: 5
+    }
+})
+~~~
+
+- Lo renderizo en SwitchScreen pasándole las props
+
+~~~js
+import React, { useState } from 'react'
+import { Switch, Text} from 'react-native'
+import { CustomView } from '../../components/ui/CustomView'
+import { Card } from '../../components/ui/Card'
+import { CustomSwitch } from '../../components/ui/Switch'
+
+
+export const SwitchScreen = () => {
+  const [isEnabled, setIsEnabled] = useState(false);
+  const toggleSwitch = () => setIsEnabled(previousState => !previousState)
+  return (
+    <CustomView style={{marginTop: 10, paddingHorizontal: 10}} >
+        <Card>
+          <CustomSwitch isOn={isEnabled} onChange={toggleSwitch} text="Encendido" />
+ 
+        </Card>
+    </CustomView>
+    
+  )
+}
+~~~
+
+- Podemos implementar que en cualquier lado donde presione de la area de la card active el toggle
+- O que si no viene el texto los elementos estén al final
+- Hago una refactorización en SwitchScreen
+
+~~~js
+import React, { useState } from 'react'
+import { Switch, Text} from 'react-native'
+import { CustomView } from '../../components/ui/CustomView'
+import { Card } from '../../components/ui/Card'
+import { CustomSwitch } from '../../components/ui/Switch'
+
+
+export const SwitchScreen = () => {
+
+   const [state, setState]= useState({
+    isActive: true,
+    isHungry: false,
+    isHappy: true
+   })
+
+
+  return (
+    <CustomView style={{marginTop: 10, paddingHorizontal: 10}} >
+        <Card>
+          <CustomSwitch isOn={state.isActive} 
+          onChange={(value)=> setState({...state, isActive: value})} 
+          text="Active" />
+          <CustomSwitch isOn={state.isHungry} 
+          onChange={(value)=> setState({...state, isHungry: value})} 
+          text="Humgry" />
+          <CustomSwitch isOn={state.isHappy} 
+          onChange={(value)=> setState({...state, isHappy: value})} 
+          text="Happy" />
+ 
+        </Card>
+    </CustomView>   
+  )
+}
+~~~
+------
+
+## Componente Separador
+
+- 
