@@ -948,4 +948,221 @@ export const Animation101Screen = () => {
 
 ## Animated ValueXY
 
+- Creo animations/Animation102Screen
+- Lo coloco en el StackNavigator
+- Uso la documentación oficial para recrear este botón arrastrable
+- La propiedad useNativeDriver hay que ponerla en false
+- Dice que necesita un segundo argumento, en Animated.event
+
+~~~js
+import React, {useRef} from 'react';
+import {Animated, PanResponder, StyleSheet, View} from 'react-native';
+
+const DraggableView = () => {
+  const pan = useRef(new Animated.ValueXY()).current;
+
+  const panResponder = PanResponder.create({
+    onStartShouldSetPanResponder: () => true,
+    onPanResponderMove: Animated.event([
+      null,
+      {
+        dx: pan.x, // x,y are Animated.Value
+        dy: pan.y,
+      },
+    ], {useNativeDriver: false}),  //aqui coloco el segundo argumento
+    onPanResponderRelease: () => {
+      Animated.spring(
+        pan, // Auto-multiplexed
+        {toValue: {x: 0, y: 0}, useNativeDriver: false}, // Back to zero
+      ).start();
+    },
+  });
+
+  return (
+    <View style={styles.container}>
+      <Animated.View
+        {...panResponder.panHandlers}
+        style={[pan.getLayout(), styles.box]}
+      />
+    </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  box: {
+    backgroundColor: '#61dafb',
+    width: 80,
+    height: 80,
+    borderRadius: 4,
+  },
+});
+
+export default DraggableView;
+~~~
+
+- Lo coloco en Animation102Screen. Le añado unos estilos al View para que me quede en el centro
+
+~~~js
+import React from 'react'
+import { Text, View } from 'react-native'
+import DraggableView from '../../components/Draggable'
+
+export const Animation102Screen = () => {
+  return (
+    <View style={{flex: 1, justifyContent: 'center'}} >
+      <DraggableView />
+    </View>
+  )
+}
+~~~
+---------
+
+## Componentes Personalizados
+
+- Creo switches/SwitchesScreen.tsx, lo coloco en el StackNavigator
+- Creo components/ui/CustomView.tsx
+- En el styles del View coloco un arreglo dentro del objeto
+- **NOTA**: para hacer la interfaz y saber el tipo de style, puedo escribirla (backgroundColor: 'black') y colocar el cursor encima
+- Como le voy a colocar elementos dentro debo definir el children en las Props
+- Uso el CustomView en la pantalla de switchesScreen
+
+~~~js
+import React, { ReactNode } from 'react'
+import { StyleProp, Text, View, ViewStyle } from 'react-native'
+import { globalStyles } from '../../../config/theme/theme'
+
+interface Props{
+    style?: StyleProp<ViewStyle>
+    children?: ReactNode 
+}
+
+
+export const CustomView = ({style, children}: Props) => {
+  return (
+    <View style={[globalStyles.mainContainer, style]} >
+      {children}
+    </View>
+  )
+}
+~~~
+
+- Puedo heredar de la inetrfaz PropsWithChildren cuando voy a colocar children
+
+~~~js
+import React, { PropsWithChildren, ReactNode } from 'react'
+import { ImageBackgroundComponent, StyleProp, Text, View, ViewStyle } from 'react-native'
+import { colors } from '../../../config/theme/theme'
+
+interface Props extends PropsWithChildren{
+    style?: StyleProp<ViewStyle>   
+}
+
+export const Card  = ({style, children}: Props) => {
+  return (
+    <View style={[
+      {backgroundColor: colors.cardBackground,
+      borderRadius: 10,
+    padding: 10},
+    style
+    ]}>
+      {children}
+    </View>
+  )
+}
+~~~
+
+- La coloco en SwitchScreen
+
+~~~js
+import React from 'react'
+import { Text} from 'react-native'
+import { CustomView } from '../../components/ui/CustomView'
+import { Card } from '../../components/ui/Card'
+
+export const SwitchScreen = () => {
+  return (
+    <CustomView style={{marginTop: 10, paddingHorizontal: 10}} >
+        <Card>
+        <Text>Component</Text>
+        </Card>
+    </CustomView>
+    
+  )
+}
+~~~
+
+- Creo un Button customizable también
+- En el style del Pressable utilizo una función para saber cuando está presionado.
+  - Abro paréntesis para hacer implícito el return, y llaves cuadradas 
+
+~~~js
+import React from 'react'
+import { Pressable, StyleProp, Text, View, ViewStyle } from 'react-native'
+import { colors, globalStyles } from '../../../config/theme/theme'
+
+interface Props{
+    text: string
+    styles?: StyleProp<ViewStyle>
+    onPress: ()=>void
+}
+
+export const Button = ({text, styles, onPress}: Props) => {
+  return (
+    <Pressable
+        onPress={onPress}
+        style={(pressed)=>([
+            globalStyles.btnPrimary,
+            {
+                opacity: pressed? 0.8 : 1,
+                backgroundColor: colors.primary
+            }
+        ])}
+    >
+        <Text style={[
+            globalStyles.btnPrimaryText,
+            {
+                color: colors.buttonTextColor
+            },
+            styles
+        ]} >
+          {text}
+        </Text>
+    </Pressable>
+  )
+}
+~~~
+
+- Lo coloco en SwitchScreen
+
+~~~js
+import React from 'react'
+import { Text} from 'react-native'
+import { CustomView } from '../../components/ui/CustomView'
+import { Card } from '../../components/ui/Card'
+import { Button } from '../../components/ui/Button'
+
+export const SwitchScreen = () => {
+  return (
+    <CustomView style={{marginTop: 10, paddingHorizontal: 10}} >
+        <Card>
+        <Text>Component</Text>
+        </Card>
+        <Button text="Click me!" onPress={()=>{}} />
+    </CustomView>
+    
+  )
+}
+~~~
+
+- Ahora que todo funciona, dejo el CustomView vacío en el SwitchScreen
+------
+
+## Componente Switch
+
 - 
+
