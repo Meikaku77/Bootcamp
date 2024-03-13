@@ -4,6 +4,8 @@ import { CustomView } from '../../components/ui/CustomView'
 import { Title } from '../../components/ui/Title'
 import { globalStyles } from '../../../config/theme/theme'
 import { Button } from '../../components/ui/Button'
+import prompt from 'react-native-prompt-android';
+import { showPrompt } from '../../../config/adapters/prompt.adapter'
 
 export const AlertScreen = () => {
     const createTwoButtonAlert = () =>
@@ -36,15 +38,15 @@ export const AlertScreen = () => {
       {text: 'OK', onPress: () => console.log('OK Pressed')},
     ]);
 
-    const showPrompt = () =>{
-        Alert.prompt(
-            '¿Cual es tu correo electrónico?',
-            'Texto blablablabla',
-            (value: string)=> console.log({value}),
-            'secure-text',
-            'Soy el valor por defecto',
-            'number-pad'
-        )
+    const onShowPrompt = () =>{
+      showPrompt({title:"Titulo", 
+      subTitle:"Subtitulo",
+      buttons: [
+        {text: 'OK', onPress:()=>console.log('button OK')},
+        {text: 'Cancel', onPress:()=>console.log('button Cancel')}
+      ],
+      placeholder: 'PlaceHolder'
+      })
     }
     
 
@@ -60,7 +62,7 @@ export const AlertScreen = () => {
       
       <View style={{height: 10}} />
 
-      <Button text="Prompt - Input" onPress={()=>showPrompt()} />
+      <Button text="Prompt - Input" onPress={()=>onShowPrompt()} />
     </CustomView>
   )
 }

@@ -1564,4 +1564,92 @@ const showPrompt = () =>{
 
 ## Prompt ios y Android
 
+- Instalo el paquete (no es el paquete más actualizado del mundo)
+
+> react-native-prompt-android
+
+- Ya no hace falta hacer el link manual
+- Copio el ejemplo de la documentación
+
+~~~js
+import prompt from 'react-native-prompt-android';
+
+    const showPrompt = () =>{
+      prompt(
+        'Enter password',
+        'Enter your password to claim your $1.5B in lottery winnings',
+        [
+         {text: 'Cancel', onPress: () => console.log('Cancel Pressed'), style: 'cancel'},
+         {text: 'OK', onPress: password => console.log('OK Pressed, password: ' + password)},
+        ],
+        {
+            type: 'secure-text',
+            cancelable: false,
+            defaultValue: 'test',
+            placeholder: 'placeholder'
+        }
+    ); 
+   }
+~~~
+
+- Con paquetes de terceros debo usar el patrón adaptador
+- En config/adapters/prompt.adapter.ts
+
+~~~js
+import prompt from "react-native-prompt-android";
+
+
+interface Options{
+    title: string
+    subTitle?: string
+    buttons: PromptButton[]
+    promptType?: 'default' | 'plain-text' | 'secure-text'
+    placeholder?: string
+    defaultValue?: string
+}
+
+interface PromptButton{
+    text: string
+    onPress: ()=> void
+    style?: "cancel" | "default" | "destructive"
+}
+
+export  const showPrompt = ({title, subTitle, buttons, promptType, placeholder, defaultValue}:Options) =>{
+    prompt(
+      title,
+      subTitle,
+      buttons,
+      
+      {
+          type: promptType= 'plain-text', //plain-text por defecto para que se muestre también en ios
+          cancelable: false,
+          defaultValue,
+          placeholder
+      }
+  ); 
+ }
+~~~
+
+- Cambio el nombre del método que tenía por onShowPrompt
+- En AlertScreen
+
+~~~js
+const onShowPrompt = () =>{
+  showPrompt({title:"Titulo", 
+  subTitle:"Subtitulo",
+  buttons: [
+    {text: 'OK', onPress:()=>console.log('button OK')},
+    {text: 'Cancel', onPress:()=>console.log('button Cancel')}
+  ],
+  placeholder: 'PlaceHolder'
+  })
+}
+~~~
+
+- De esta manera solo hay que cambiar la implementación y no todas las pantallas donde se consuma el prompt
+- 
+------
+
+## Componente TextInput
+
 - 
