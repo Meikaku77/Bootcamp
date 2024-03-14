@@ -5,12 +5,15 @@ import { globalStyles } from '../../../config/theme/theme'
 interface Props{
     style?: StyleProp<ViewStyle>
     children?: ReactNode 
+    margin?: boolean
 }
 
 
-export const CustomView = ({style, children}: Props) => {
+export const CustomView = ({margin = false, style, children}: Props) => {
   return (
-    <View style={[globalStyles.mainContainer, style]} >
+    <View style={[
+      margin ? globalStyles.mainContainer: null, 
+      style]} >
       {children}
     </View>
   )

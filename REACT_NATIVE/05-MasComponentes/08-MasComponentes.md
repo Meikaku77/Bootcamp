@@ -1652,4 +1652,258 @@ const onShowPrompt = () =>{
 
 ## Componente TextInput
 
+- Creo screens/inputs/textInputScreen. Lo coloco en el StackNavigator
+- Como todo el rato estoy colocando el globalStyles.marginCntainer en el CustomView lo añado como una prop al componente
+- Si el margin está en true añada el estilo
+
+~~~js
+import React, { ReactNode } from 'react'
+import { StyleProp, Text, View, ViewStyle } from 'react-native'
+import { globalStyles } from '../../../config/theme/theme'
+
+interface Props{
+    style?: StyleProp<ViewStyle>
+    children?: ReactNode 
+    margin?: boolean
+}
+
+
+export const CustomView = ({margin = false, style, children}: Props) => {
+  return (
+    <View style={[
+      margin ? globalStyles.mainContainer: null, 
+      style]} >
+      {children}
+    </View>
+  )
+}
+~~~
+
+- Al poner el TextInput dentro de mi custom Card hace que se vea bonito
+
+~~~js
+import React from 'react'
+import { Text, TextInput, View } from 'react-native'
+import { CustomView } from '../../components/ui/CustomView'
+import { Title } from '../../components/ui/Title'
+import { Card } from '../../components/ui/Card'
+
+export const TextInputScreen = () => {
+  return (
+    <CustomView margin>
+      <Title text="text Inputs" safe />
+      <Card>
+        <TextInput/>
+      </Card>
+    </CustomView>
+  )
+}
+~~~
+
+- Defino un estilo de CSS desde el theme global
+- El color del texto al cambiarlo de manera dinámica me dará un inconveniente más adelante. Lo solucionaremos
+
+~~~js
+  input:{
+    height: 40,
+    margin: 12,
+    borderWidth: 1,
+    padding: 10,
+    borderColor: 'rgba(0,0,0,0.3)',
+    borderRadius: 10,
+    color: colors.text
+  }
+~~~
+
+- Hay varias properties en TextInput
+  - autoCapitalize no es un valor booleano, indico si quiero capitalizar por palabras, sentencias...
+
+~~~js
+import React, { useState } from 'react'
+import { Text, TextInput, View } from 'react-native'
+import { CustomView } from '../../components/ui/CustomView'
+import { Title } from '../../components/ui/Title'
+import { Card } from '../../components/ui/Card'
+import { globalStyles } from '../../../config/theme/theme'
+
+export const TextInputScreen = () => {
+
+    const [form, setForm] = useState({
+        name: '',
+        email:'',
+        phone: ''
+    })
+
+  return (
+    <CustomView margin>
+      <Title text="Text Input" safe />
+      <Card>
+        <TextInput style={globalStyles.input} 
+            placeholder="Nombre completo"
+            autoCapitalize='words'
+            autoCorrect={false}
+            onChangeText={value=>setForm({...form, name: value})}
+        />
+      </Card>
+
+      <View style={{height: 10}} />
+      <Card>
+        <TextInput style={globalStyles.input} 
+            placeholder="Email"
+            autoCapitalize='words'
+            autoCorrect={false}
+            onChangeText={value=>setForm({...form, email: value})}
+        />
+      </Card>
+      <View style={{height: 10}} />
+      <Card>
+        <TextInput style={globalStyles.input} 
+            placeholder="Teléfono"
+            autoCapitalize='words'
+            keyboardType='phone-pad'
+            autoCorrect={false}
+            onChangeText={value=>setForm({...form, phone: value})}
+        />
+      </Card>
+      <View style={{height: 10}} />
+
+        <Card>
+            <Text>{JSON.stringify(form, null, 2)}</Text>
+        </Card>
+    </CustomView>
+  )
+}
+~~~
+
+- Ahora hay un problema y es que si tuviera varios objetos que leer en pantalla, no podría hacer scroll
+- Meto todo el contenido dentro de un ScrollView
+-----
+
+## Scroll y teclado
+
+- Si coloco un TextInput al final, al aparecer el teclado en Android si lo desplaza hacia arriba pero en ios no
+- En ios es necesario envolver el componente dentro de un KeyboradAvoidingView~para que el teclado en pantalla no de problemas
+- También es recomendable poner un View con un margin de gracia al final
+
+~~~js
+import React, { useState } from 'react'
+import { KeyboardAvoidingView, Platform, ScrollView, Text, TextInput, View } from 'react-native'
+import { CustomView } from '../../components/ui/CustomView'
+import { Title } from '../../components/ui/Title'
+import { Card } from '../../components/ui/Card'
+import { globalStyles } from '../../../config/theme/theme'
+
+export const TextInputScreen = () => {
+
+    const [form, setForm] = useState({
+        name: '',
+        email:'',
+        phone: ''
+    })
+
+  return (
+
+    <KeyboardAvoidingView behavior={Platform.OS === 'ios'? 'padding': undefined}>
+    <ScrollView>
+
+    <CustomView margin>
+      <Title text="Text Input" safe />
+      <Card>
+        <TextInput style={globalStyles.input} 
+            placeholder="Nombre completo"
+            autoCapitalize='words'
+            autoCorrect={false}
+            onChangeText={value=>setForm({...form, name: value})}
+        />
+      </Card>
+
+      <View style={{height: 10}} />
+      <Card>
+        <TextInput style={globalStyles.input} 
+            placeholder="Email"
+            autoCapitalize='words'
+            autoCorrect={false}
+            onChangeText={value=>setForm({...form, email: value})}
+        />
+      </Card>
+      <View style={{height: 10}} />
+      <Card>
+        <TextInput style={globalStyles.input} 
+            placeholder="Teléfono"
+            autoCapitalize='words'
+            keyboardType='phone-pad'
+            autoCorrect={false}
+            onChangeText={value=>setForm({...form, phone: value})}
+        />
+      </Card>
+      <View style={{height: 10}} />
+
+        <Card>
+            <Text>{JSON.stringify(form, null, 2)}</Text>
+        </Card>
+        <View style={{height: 20}} />
+    </CustomView>
+    </ScrollView>
+    </KeyboardAvoidingView>
+  )
+}
+~~~
+----
+
+## Pull To Refresh
+
+- Creo screens/ui/PullToRefreshScreen. Lo coloco en el StackNavigator
+- RefreshControl pide ciertas properties obligatorias
+- Con el refreshing en true, en ios el notch cubre el spinning
+- Para arreglarlo uso el safeAreaInsets y extraigo el top, lo coloco en progressViewOffset
+- Cambio el true en duro por un state
+- En onRefresh llamo a la función que he creado
+- Le puedo pasar un arreglo de colores en hexadecimal
+- Para que se vea bien en ios le paso el globalStyles al ScrollView
+
+~~~js
+import React, { useState } from 'react'
+import { RefreshControl, ScrollView, Text, View } from 'react-native'
+import { Title } from '../../components/ui/Title'
+import { CustomView } from '../../components/ui/CustomView'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { colors, globalStyles } from '../../../config/theme/theme'
+
+export const PullToRefreshScreen = () => {
+
+    const [isRefreshing, setIsRefreshing] = useState(false)
+
+    const {top} = useSafeAreaInsets()
+    
+    const onRefresh =()=>{
+        setIsRefreshing(true)
+
+        setTimeout(()=>{
+            setIsRefreshing(false)
+        }, 2000)
+    }
+
+  return (
+    <ScrollView refreshControl={
+    <RefreshControl 
+        refreshing={isRefreshing}
+        progressViewOffset={top}
+        onRefresh={onRefresh} 
+        colors={[colors.primary, 'red', 'orange', 'green']} />} 
+        style={[globalStyles.mainContainer, globalStyles.globalMargin]}
+        >
+        <CustomView margin>
+            <Title text="Pull To Refresh" safe  />
+        </CustomView>
+    </ScrollView>
+  )
+}
+~~~
+
+- Ahora si tiro de la pantalla aparece un spinning
+- Podríamos crear un CustomScrollView para que quedara esta configuración siempre y no estar colocando esto una y otra vez
+-----
+
+## Componente - SectionList
+
 - 
