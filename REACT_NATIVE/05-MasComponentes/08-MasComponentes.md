@@ -2471,6 +2471,62 @@ const ListItem = ({number}: ListItemProps)=>{
 
 ## Animated Image
 
-- 
+- Uso Animated.Image como componente
+- Tengo una propiedad que es onLoadEnd que puedo usar para disparar la animación que extraigo del custom hook useAnimation
+- El ActivityIndicator solo debe mostrarse si el isLoading está en true
 
+~~~js
 
+import React, { useState } from 'react'
+import { Animated, ImageStyle, StyleProp, View } from 'react-native'
+import { useAnimation } from '../../hooks/useAnimation'
+import { ActivityIndicator } from 'react-native-paper'
+
+interface Props{
+    uri: string,
+    style?: StyleProp<ImageStyle>
+}
+
+export const FadeInImage = ({uri, style}: Props) => {
+    const {fadeIn, animatedOpacity}= useAnimation()
+    const [isLoading, setIsLoading] = useState(true)
+  return (
+    <View style={{justifyContent: 'center', alignItems: 'center'}}>
+
+    {isLoading && 
+    <ActivityIndicator 
+        style={{position: 'absolute'}}
+        color= 'blue'
+        size={30}
+    />}
+
+      <Animated.Image
+        source={{uri}}
+        onLoadEnd={()=>(
+            fadeIn({duration:1000}),
+            setIsLoading(false)
+        )}
+        style={[style, {opacity: animatedOpacity}]}
+        
+      />
+    </View>
+  )
+}
+~~~
+
+- Se lo paso a ListItem para que lo renderice en el renderItem del FlatList
+- Debo pasarle un height y un width para que muestre las imágenes
+
+~~~js
+const ListItem = ({number}: ListItemProps)=>{
+    return(
+        <FadeInImage uri={`https://picsum.photos/id/${number}/500/400`} 
+            style={{
+                height:400,
+                width: '100%'
+            }}
+        />
+        
+    )
+}
+~~~
