@@ -2312,5 +2312,165 @@ export const ModalScreen = () => {
   )
 }
 ~~~
+------
+
+## InfiniteScroll
+
+- Creo el componente, lo coloco en el StackNavigator
+- Hagamos un ejercicio sencillo
+- Creo un estado para guardar los números
+- Usualmente vamos a querer usar un FlatList para hacer un InfiniteScroll, ya que carga de manera perezosa
+- Con un ScrollView todos los elementos van a ser cargados desde el inicio
+- EL FlatList tiene la propiedad onEndReached para disparar una función cuando llega al final
+- Uso el setstate, esparzo el state anterior y el nuevo Array
+
+~~~js
+import React, { useState } from 'react'
+import { Text, View } from 'react-native'
+import { CustomView } from '../../components/ui/CustomView'
+import { Title } from '../../components/ui/Title'
+import { colors } from '../../../config/theme/theme'
+import { FlatList } from 'react-native-gesture-handler'
+
+export const InfiniteScroll = () => {
+
+    const [numbers, setNumbers] = useState([0,1,2,3,4,5])
+
+    const loadMore =()=>{
+        const newArray = Array.from({length: 5}, (_,i)=>numbers.length +i)
+        setNumbers([...numbers, ...newArray])
+    }
+
+
+  return (
+    <CustomView margin>
+      <Title text="InfiniteScroll" />
+      <FlatList
+        onEndReached={loadMore}
+        data={numbers}
+        renderItem={({item}: any)=>(
+            <Text style={{height: 300, backgroundColor: colors.primary, color: 'white', fontSize: 50}}>{item}</Text>
+        )}
+        
+        />
+    </CustomView>
+  )
+}
+~~~
+
+- Para evitar el trompicón y cargar los elementos antes de que llegue al final tengo la proponEndReachedTreshold, cuyo valor por defecto es 0.5
+- Puedo ponerlo en 0.6 para que empiece a cargar antes de que llegue al final
+- Debo colocar el keyExtractor, la key debe de ser un string
+
+~~~js
+<CustomView margin>
+  <Title text="InfiniteScroll" />
+  <FlatList
+    onEndReached={loadMore}
+    data={numbers}
+    renderItem={({item}: any)=>(
+        <Text style={{height: 300, backgroundColor: colors.primary, color: 'white', fontSize: 50}}>{item}</Text>
+    )}
+    onEndReachedThreshold={0.6}
+    keyExtractor={(item)=> item.toString()}
+    />
+</CustomView>
+~~~
+-----
+
+## InfiniteScroll con imágenes
+
+- Usaremos Lorem Picsum para las imágenes
+- Creo un componente para renderizar los números
+
+~~~js
+
+import React, { useState } from 'react'
+import { Text, View, VirtualizedListWithoutRenderItemProps } from 'react-native'
+import { CustomView } from '../../components/ui/CustomView'
+import { Title } from '../../components/ui/Title'
+import { colors } from '../../../config/theme/theme'
+import { FlatList } from 'react-native-gesture-handler'
+
+export const InfiniteScroll = () => {
+
+    const [numbers, setNumbers] = useState([0,1,2,3,4,5])
+
+    const loadMore =()=>{
+        const newArray = Array.from({length: 5}, (_,i)=>numbers.length +i)
+        setNumbers([...numbers, ...newArray])
+    }
+
+
+  return (
+    <CustomView margin>
+      <Title text="InfiniteScroll" />
+      <FlatList
+        onEndReached={loadMore}
+        data={numbers}
+        renderItem={({item}: any)=>(
+            <ListItem number={item} />
+        )}
+        onEndReachedThreshold={0.6}
+        keyExtractor={(item)=> item.toString()}
+        />
+    </CustomView>
+  )
+}
+
+interface ListItemProps{
+    number: number
+}
+
+const ListItem = ({number}: ListItemProps)=>{
+    return(
+        <Text style={{height: 300, backgroundColor: colors.primary, color: 'white', fontSize: 50}}>{number}</Text>
+    )
+}
+~~~
+
+- Ahora en lugar de renderizar el texto renderizamos un Image 
+
+~~~js
+const ListItem = ({number}: ListItemProps)=>{
+    return(
+        <Image  source={{uri:`https://picsum.photos/id/${number}/500/400`}} 
+        style={{
+            height: 400,
+            width: '100%'
+        }}
+        />
+    )
+}
+~~~
+
+- Cuando la imagen se carga en Android tiene un fadeIn pero en ios no
+- Quiero mostrar algún tipo de indicador cuando estoy mostrando las imágenes
+- Uso la prop ListFooterComponent de FlatList
+
+~~~js
+<CustomView margin>
+      <Title text="InfiniteScroll" />
+      <FlatList
+        onEndReached={loadMore}
+        data={numbers}
+        renderItem={({item}: any)=>(
+            <ListItem number={item} />
+        )}
+        onEndReachedThreshold={0.6}
+        keyExtractor={(item)=> item.toString()}
+        ListFooterComponent={()=>(
+            <View style={{height: 150, justifyContent: 'center'}} >
+                <ActivityIndicator size={50} color={colors.primary} />
+            </View>
+        )}  
+        />
+    </CustomView>
+~~~
+-----
+
+## Animated Image
 
 - 
+
+
