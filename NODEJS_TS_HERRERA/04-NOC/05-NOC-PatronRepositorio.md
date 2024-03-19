@@ -3,7 +3,7 @@
 ## Introducción
 
 - **Data Source** es el origen de los datos
-- Vamos a empezar a trabajar con el filesystem. Vamos a grabar logs en  él
+- Vamos a empezar a trabajar con el filesystem. Vamos a grabar logs en él
 - Pero va a dar igual si es en el filesystem, en una DB...
 - El objetivo es hacer una app en la que esto no importe, o que sea intercambiable sin dolor
 - Aplicando **el patrón repositorio**, voy a crear un repositorio que se conecta al data-source, y mi caso de uso llamará al repositorio.
@@ -32,8 +32,8 @@ export class LogEntity{
     public createdAt: Date
 
     constructor(message: string, level: LogSeverityLevel){
-        this.message = message
         this.level = level
+        this.message = message
         this.createdAt = new Date()
     }
 }
@@ -250,10 +250,8 @@ const logAsJson = `${JSON.stringify(newLog)}\n`
 ~~~js
  private getLogsFromFile =(path: string): LogEntity[]=>{
         const content = fs.readFileSync(path, 'utf-8') 
-        
-
-
    }
+
     getLogs(severityLevel: LogSeverityLevel): Promise<LogEntity[]> {
        
         switch (severityLevel) {
@@ -615,4 +613,6 @@ MAILER_SECRET_KEY=
 PROD
 
 ````
+3. Ejecutar npm i
+4. ejecutar npm run dev
 ~~~
