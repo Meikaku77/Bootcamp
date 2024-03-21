@@ -102,8 +102,8 @@ export class CheckService implements CheckServiceUseCase{
 
             const log = new LogEntity({
                 message:`Service ${url} working`, 
-            level: LogSeverityLevel.low,
-        origin: 'check-service.ts' })
+                level: LogSeverityLevel.low,
+                origin: 'check-service.ts' })
             this.logRepository.saveLog(log)
             this.successCallback() //llamo al SuccessCallback si todo sale bien
             
@@ -146,5 +146,114 @@ export class CheckService implements CheckServiceUseCase{
 
 ## NodeMailer
 
-- Instalo nodemailer
-- 
+- Instalo nodemailer y los tipos con @types/nodemailer
+- Creo un nuevo servicio en /presentation/email/email.service.ts
+- Teniendo esto es un archivo reutilizable que puedes copiar en cualquier proyecto en el que quieras enviar mails
+- Para configurar nodemailer necesitamos establecer el transporter
+- Yo puedo querer cambiar estos valores dentro del transporter por lo que uso variabels de entorno
+    - Recuerda poner la variable vacía en env.template para saber que hay que introducirla ya que .env no se subirá a GIT
+    - Coloco la variable de entorno en env.plugin
+
+~~~js
+import 'dotenv/config'
+import * as env from 'env-var'
+
+export const envs = {
+    PORT: env.get('PORT').required().asPortNumber(),
+    MAILER_EMAIL:env.get('MAILER_EMAIL').required().asEmailString(),
+    MAILER_SERVICE: env.get('MAILER_SERVICE').required().asString(),
+    MAILER_SECRET_KEY: env.get('MAILER_SECRET_KEY').required().asString(),
+    PROD: env.get('PROD').required().asBool()
+}
+~~~
+
+- El servicio 
+
+~~~js
+import nodemailer from 'nodemailer'
+import { envs } from '../../config/plugins/envs.plugin'
+
+interface SendEmailOptions{
+    to: string
+    subject: string
+    htmlBody: string
+    //TODO:attachments
+}
+
+export class EmailService{
+    private transporter= nodemailer.createTransport({
+        service: envs.MAILER_SERVICE,
+        auth:{
+            user: envs.MAILER_EMAIL,
+            pass: envs.MAILER_SECRET_KEY
+        },
+        tls: {
+            rejectUnauthorized: false
+        }
+    })
+
+    async sendEmail(options: SendEmailOptions): Promise<boolean>{
+
+        const {to, subject,htmlBody} = options
+
+            try {
+
+                const sentInformation = await this.transporter.sendMail({
+                    to,
+                    subject,
+                    html: htmlBody
+                })
+
+                console.log(sentInformation)
+
+                return true
+            } catch (error) {
+
+                console.log(error)
+             
+                return false
+            }
+    }
+}
+~~~
+
+- Creo una nueva instancia en el server
+- Lo hago así porque voy a usar inyección de dependencias, si no usaría un método estático
+
+~~~js
+import { CheckService } from "../domain/use-cases/checks/check-service";
+import { FileSystemDatasource } from "../infraestructure/datasources/file-system.datasource";
+import { LogRepositoryImpl } from "../infraestructure/repository/log.repository";
+import { CronService } from "./cron/cron-service";
+import { EmailService } from "./email/email.service";
+
+
+const fileSystemRepository = new LogRepositoryImpl(
+    new FileSystemDatasource()
+)
+
+
+export class Server {
+
+    public static start(){
+        //CronService.createJob('*/5 * * * * *', ()=>{
+            
+          //  new CheckService(
+            //    fileSystemRepository,
+            //    ()=> console.log("Success!"),
+            //    (error)=> console.log(`${error}`)
+            //).execute('https://google.es')
+        // })
+
+        const emailService = new EmailService()
+
+        emailService.sendEmail({
+            to:'bercast81@gmail.com',
+            subject: 'Logs de sistema',
+            htmlBody:`
+            <h3>Logs de sistema</h3>
+            <p>Este es un mail para los logs de sistema</p>`
+        })
+    }
+}
+~~~
