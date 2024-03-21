@@ -12,13 +12,13 @@ const fileSystemRepository = new LogRepositoryImpl(
 export class Server {
 
     public static start(){
-        CronService.createJob('*/5 * * * * *', ()=>{
+        //CronService.createJob('*/5 * * * * *', ()=>{
             
-            new CheckService(
-                fileSystemRepository,
-                ()=> console.log("Success!"),
-                (error)=> console.log(`${error}`)
-            ).execute('https://google.es')
-        })
+          //  new CheckService(
+            //    fileSystemRepository,
+            //    ()=> console.log("Success!"),
+            //    (error)=> console.log(`${error}`)
+            //).execute('https://google.es')
+        // })
     }
 }
