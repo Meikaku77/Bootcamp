@@ -257,3 +257,221 @@ export class Server {
     }
 }
 ~~~
+
+## Enviar archivos
+
+- Hay varias maneras
+- Puedo crear el archivo, crear un buffer (mirar documentación Nodemailer)
+- Vamos a usar el path y el fileName
+- Creo otro método en el servicio
+- Creo attachments del tipo arreglo de Attachment. Lo desestructuro y lo agrego al transporter
+
+~~~js
+import nodemailer from 'nodemailer'
+import { envs } from '../../config/plugins/envs.plugin'
+
+interface SendEmailOptions{
+    to: string | string[]
+    subject: string
+    htmlBody: string
+    attachments?: Attachment[]
+}
+
+interface Attachment{
+    filename?: string
+    path?: string
+}
+
+export class EmailService{
+    private transporter= nodemailer.createTransport({
+        service: envs.MAILER_SERVICE,
+        auth:{
+            user: envs.MAILER_EMAIL,
+            pass: envs.MAILER_SECRET_KEY
+        },
+        tls: {
+            rejectUnauthorized: false
+        }
+    })
+
+    async sendEmail(options: SendEmailOptions): Promise<boolean>{
+
+        const {to, subject,htmlBody, attachments} = options
+
+            try {
+
+                const sentInformation = await this.transporter.sendMail({
+                    to,
+                    subject,
+                    html: htmlBody,
+                    attachments
+                })
+
+                console.log(sentInformation)
+
+                return true
+            } catch (error) {
+
+                console.log(error)
+             
+                return false
+            }
+    }
+
+    async sendemailWithFileSystemLogs(to: string | string[]){ 
+            const subject= 'Logs del servidor'
+            const htmlBody=`
+            <h3>Logs del sistema</h3>
+            <p>Desde sendEmailWithFileSystem</p>
+            `
+
+        const attachments: Attachment[]= [
+            {filename: 'logs-all.log', path: './logs/logs-all.log'},
+            {filename: 'logs-high.log', path: './logs/logs-high.log'},
+            {filename: 'logs-medium.log', path: './logs/logs-medium.log'},
+        ]
+        return this.sendEmail({to, subject, attachments, htmlBody})
+    }
+}
+~~~
+
+- Ahora puedo usar este método con la instancia del servicio en el server
+
+~~~js
+ const emailService = new EmailService()
+
+ emailService.sendemailWithFileSystemLogs(["bercast81@gmail.com"])
+~~~
+
+## Inyectar repositorio
+
+- El mandar un correo electrónico es algo que también debería estar monitoreado
+    - Debo poder comunicar si algo salió mal y que quede el registro
+- Para ello voy a usar inyección de dependencias
+- Primero lo haremos de la manera sencilla y luego la más racional
+- Inyecto el LogRepository
+
+~~~js
+import nodemailer from 'nodemailer'
+import { envs } from '../../config/plugins/envs.plugin'
+import { LogRepository } from '../../domain/repository/log.repository'
+import { LogEntity, LogSeverityLevel } from '../../domain/entities/log.entity'
+
+interface SendEmailOptions{
+    to: string | string[]
+    subject: string
+    htmlBody: string
+    attachments?: Attachment[]
+}
+
+interface Attachment{
+    filename?: string
+    path?: string
+}
+
+export class EmailService{
+
+    constructor(private readonly logRepository: LogRepository){
+
+    }
+    private transporter= nodemailer.createTransport({
+        service: envs.MAILER_SERVICE,
+        auth:{
+            user: envs.MAILER_EMAIL,
+            pass: envs.MAILER_SECRET_KEY
+        },
+        tls: {
+            rejectUnauthorized: false
+        }
+    })
+
+    async sendEmail(options: SendEmailOptions): Promise<boolean>{
+
+        const {to, subject,htmlBody, attachments} = options
+
+            try {
+
+                const sentInformation = await this.transporter.sendMail({
+                    to,
+                    subject,
+                    html: htmlBody,
+                    attachments
+                })
+
+                console.log(sentInformation)
+
+                const log = new LogEntity({
+                    level: LogSeverityLevel.low,
+                    message: 'Email sent',
+                    origin: 'email.service'
+                })
+                this.logRepository.saveLog(log)
+
+                return true
+            } catch (error) {
+
+                console.log(error)
+                const log = new LogEntity({
+                    level: LogSeverityLevel.low,
+                    message: 'Email was no sent',
+                    origin: 'email.service'
+                })
+                this.logRepository.saveLog(log)
+             
+                return false
+            }
+    }
+
+    async sendemailWithFileSystemLogs(to: string | string[]){ 
+            const subject= 'Logs del servidor'
+            const htmlBody=`
+            <h3>Logs del sistema</h3>
+            <p>Desde sendEmailWithFileSystem</p>
+            `
+
+        const attachments: Attachment[]= [
+            {filename: 'logs-all.log', path: './logs/logs-all.log'},
+            {filename: 'logs-high.log', path: './logs/logs-high.log'},
+            {filename: 'logs-medium.log', path: './logs/logs-medium.log'},
+        ]
+
+        
+        return this.sendEmail({to, subject, attachments, htmlBody})
+    }
+}
+~~~
+
+- Inyecto el fileSystemLogRepository en la instancia del emailService en el server
+
+~~~js
+import { CheckService } from "../domain/use-cases/checks/check-service";
+import { FileSystemDatasource } from "../infraestructure/datasources/file-system.datasource";
+import { LogRepositoryImpl } from "../infraestructure/repository/log.repository";
+import { CronService } from "./cron/cron-service";
+import { EmailService } from "./email/email.service";
+
+
+const fileSystemRepository = new LogRepositoryImpl(
+    new FileSystemDatasource()
+)
+
+
+export class Server {
+
+    public static start(){
+        //CronService.createJob('*/5 * * * * *', ()=>{
+            
+          //  new CheckService(
+            //    fileSystemRepository,
+            //    ()=> console.log("Success!"),
+            //    (error)=> console.log(`${error}`)
+            //).execute('https://google.es')
+        // })
+
+        const emailService = new EmailService(fileSystemRepository)
+
+        emailService.sendemailWithFileSystemLogs(["bercast81@gmail.com"])
+
+    }
+}
+~~~

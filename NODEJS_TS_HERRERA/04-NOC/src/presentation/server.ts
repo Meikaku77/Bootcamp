@@ -22,14 +22,9 @@ export class Server {
             //).execute('https://google.es')
         // })
 
-        const emailService = new EmailService()
+        const emailService = new EmailService(fileSystemRepository)
 
-        emailService.sendEmail({
-            to:'bercast81@gmail.com',
-            subject: 'Logs de sistema',
-            htmlBody:`
-            <h3>Logs de sistema</h3>
-            <p>Este es un mail para los logs de sistema</p>`
-        })
+        emailService.sendemailWithFileSystemLogs(["bercast81@gmail.com"])
+
     }
 }
