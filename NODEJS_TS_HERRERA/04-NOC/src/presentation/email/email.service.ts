@@ -17,7 +17,7 @@ interface Attachment{
 
 export class EmailService{
 
-    constructor(private readonly logRepository: LogRepository){
+    constructor(){  //borro la inyección de dependencias
 
     }
     private transporter= nodemailer.createTransport({
@@ -51,7 +51,7 @@ export class EmailService{
                     message: 'Email sent',
                     origin: 'email.service'
                 })
-                this.logRepository.saveLog(log)
+               // this.logRepository.saveLog(log)
 
                 return true
             } catch (error) {
@@ -62,7 +62,7 @@ export class EmailService{
                     message: 'Email was no sent',
                     origin: 'email.service'
                 })
-                this.logRepository.saveLog(log)
+                //this.logRepository.saveLog(log)
              
                 return false
             }

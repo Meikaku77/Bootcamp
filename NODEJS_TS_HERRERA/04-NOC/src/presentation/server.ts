@@ -1,4 +1,5 @@
 import { CheckService } from "../domain/use-cases/checks/check-service";
+import { SendEmailLogs } from "../domain/use-cases/emails/send-email-logs";
 import { FileSystemDatasource } from "../infraestructure/datasources/file-system.datasource";
 import { LogRepositoryImpl } from "../infraestructure/repository/log.repository";
 import { CronService } from "./cron/cron-service";
@@ -7,8 +8,9 @@ import { EmailService } from "./email/email.service";
 
 const fileSystemRepository = new LogRepositoryImpl(
     new FileSystemDatasource()
-)
-
+    )
+    
+const emailService = new EmailService()
 
 export class Server {
 
@@ -22,9 +24,8 @@ export class Server {
             //).execute('https://google.es')
         // })
 
-        const emailService = new EmailService(fileSystemRepository)
 
-        emailService.sendemailWithFileSystemLogs(["bercast81@gmail.com"])
+        new SendEmailLogs(emailService, fileSystemRepository).execute(['bercast81@gmail.com'])
 
     }
 }

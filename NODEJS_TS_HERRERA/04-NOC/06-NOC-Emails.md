@@ -475,3 +475,223 @@ export class Server {
     }
 }
 ~~~
+----
+
+## SendEmail use-case
+
+- Podría funcionar así tal cual, pero puedo crear un caso de uso
+- Creo en domain/use-cases/logs/emails/send-email-logs.ts
+- Usualmente son los casos de uso que llaman al repositorio
+- Entonces debo inyectar el servicio y el repositorio
+
+~~~js
+import { EmailService } from "../../../presentation/email/email.service"
+import { LogEntity, LogSeverityLevel } from "../../entities/log.entity"
+import { LogRepository } from "../../repository/log.repository"
+
+interface SendLogEmailUseCase{
+    execute: (to: string | string[])=> Promise<boolean>
+
+}
+
+export class SendEmailLogs implements SendLogEmailUseCase{
+
+    constructor(
+        private readonly emailService: EmailService,
+        private readonly logRepository: LogRepository
+    ){}
+
+    async execute(to: string | string[]){
+
+        try {
+            
+           const sent = await this.emailService.sendemailWithFileSystemLogs(to) //regresa un boolean
+           if(!sent){
+            throw new Error('Email log not sent')
+           }
+           return true
+            
+        } catch (error) {
+            const log = new LogEntity({
+                message: `${error}`, 
+                level: LogSeverityLevel.medium,
+                origin: 'send-email-logs'
+            })
+
+            this.logRepository.saveLog(log)
+            return false
+        }
+
+
+        return true
+    }
+}
+~~~
+
+- Puedo mandar también un log conforme el mail se mandó exitosamente
+
+~~~js
+ async execute(to: string | string[]){
+
+        try {
+            
+           const sent = await this.emailService.sendemailWithFileSystemLogs(to) //regresa un boolean
+           if(!sent){
+            throw new Error('Email log not sent')
+           }
+
+           const log = new LogEntity({
+            message: `Log email sent`, 
+            level: LogSeverityLevel.medium,
+            origin: 'send-email-logs'
+        })
+
+        this.logRepository.saveLog(log)
+           return true
+            
+        } catch (error) {
+            const log = new LogEntity({
+                message: `${error}`, 
+                level: LogSeverityLevel.medium,
+                origin: 'send-email-logs'
+            })
+
+            this.logRepository.saveLog(log)
+            return false
+        }
+
+
+        return true
+    }
+~~~
+
+- Ahora EmailService no necesita la inyección de dependencias 
+
+~~~js
+import nodemailer from 'nodemailer'
+import { envs } from '../../config/plugins/envs.plugin'
+import { LogRepository } from '../../domain/repository/log.repository'
+import { LogEntity, LogSeverityLevel } from '../../domain/entities/log.entity'
+
+interface SendEmailOptions{
+    to: string | string[]
+    subject: string
+    htmlBody: string
+    attachments?: Attachment[]
+}
+
+interface Attachment{
+    filename?: string
+    path?: string
+}
+
+export class EmailService{
+
+    constructor(){  //borro la inyección de dependencias
+
+    }
+    private transporter= nodemailer.createTransport({
+        service: envs.MAILER_SERVICE,
+        auth:{
+            user: envs.MAILER_EMAIL,
+            pass: envs.MAILER_SECRET_KEY
+        },
+        tls: {
+            rejectUnauthorized: false
+        }
+    })
+
+    async sendEmail(options: SendEmailOptions): Promise<boolean>{
+
+        const {to, subject,htmlBody, attachments} = options
+
+            try {
+
+                const sentInformation = await this.transporter.sendMail({
+                    to,
+                    subject,
+                    html: htmlBody,
+                    attachments
+                })
+
+                console.log(sentInformation)
+
+                const log = new LogEntity({
+                    level: LogSeverityLevel.low,
+                    message: 'Email sent',
+                    origin: 'email.service'
+                })
+               // this.logRepository.saveLog(log)
+
+                return true
+            } catch (error) {
+
+                console.log(error)
+                const log = new LogEntity({
+                    level: LogSeverityLevel.low,
+                    message: 'Email was no sent',
+                    origin: 'email.service'
+                })
+                //this.logRepository.saveLog(log)
+             
+                return false
+            }
+    }
+
+    async sendemailWithFileSystemLogs(to: string | string[]){ 
+            const subject= 'Logs del servidor'
+            const htmlBody=`
+            <h3>Logs del sistema</h3>
+            <p>Desde sendEmailWithFileSystem</p>
+            `
+
+        const attachments: Attachment[]= [
+            {filename: 'logs-all.log', path: './logs/logs-all.log'},
+            {filename: 'logs-high.log', path: './logs/logs-high.log'},
+            {filename: 'logs-medium.log', path: './logs/logs-medium.log'},
+        ]
+
+        
+        return this.sendEmail({to, subject, attachments, htmlBody})
+    }
+}
+~~~
+
+- En el Server coloco la instancia del servicio fuera de la clase y llamo a mi caso de uso
+
+~~~js
+import { CheckService } from "../domain/use-cases/checks/check-service";
+import { SendEmailLogs } from "../domain/use-cases/emails/send-email-logs";
+import { FileSystemDatasource } from "../infraestructure/datasources/file-system.datasource";
+import { LogRepositoryImpl } from "../infraestructure/repository/log.repository";
+import { CronService } from "./cron/cron-service";
+import { EmailService } from "./email/email.service";
+
+
+const fileSystemRepository = new LogRepositoryImpl(
+    new FileSystemDatasource()
+    )
+    
+const emailService = new EmailService()
+
+export class Server {
+
+    public static start(){
+        //CronService.createJob('*/5 * * * * *', ()=>{
+            
+          //  new CheckService(
+            //    fileSystemRepository,
+            //    ()=> console.log("Success!"),
+            //    (error)=> console.log(`${error}`)
+            //).execute('https://google.es')
+        // })
+
+
+        new SendEmailLogs(emailService, fileSystemRepository).execute(['bercast81@gmail.com'])
+
+    }
+}
+~~~
+
+
+
